@@ -1,0 +1,67 @@
+{
+  "name": "@castframework/securitytoken",
+  "version": "1.0.0",
+  "description": "Le security token ultime",
+  "author": "Société Générale Forge",
+  "license": "See license in LICENSE",
+  "private": true,
+  "engines": {
+    "node": "16.15"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.0",
+    "@openzeppelin/contracts-upgradeable": "^5.0.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.7",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/hardhat-upgrades": "^3.0.0",
+    "@openzeppelin/upgrades-core": "^1.33.1",
+    "@types/chai": "~4.3.1",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^20.1.1",
+    "@types/snap-shot-core": "^10.2.0",
+    "@typescript-eslint/eslint-plugin": "^4.33.0",
+    "chai": "^4.3.7",
+    "dotenv": "^16.0.3",
+    "eslint": "^7.11.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "2.25.3",
+    "hardhat": "^2.16.1",
+    "lint-staged": "^12.1.2",
+    "mocha": "^8.4.0",
+    "mocha-junit-reporter": "^2.2.0",
+    "mocha-multi-reporters": "^1.5.1",
+    "prettier": "^2.5.1",
+    "snap-shot-core": "^10.2.4",
+    "solhint": "3.3.6",
+    "solhint-plugin-prettier": "0.0.5",
+    "solidity-docgen": "~0.6.0-beta.35",
+    "typescript": "~4.7.4"
+  },
+  "scripts": {
+    "clean": "rm -rf dist/ coverage/ reports/ cache/",
+    "build:ts": "tsc",
+    "build": "npx hardhat compile",
+    "deploy:proxy": "npx hardhat run src/scripts/deploy-upgradable-smartcoin.ts",
+    "deploy:implementation": "npx hardhat run src/scripts/deploy-smartcoin-implementation.ts",
+    "lint:sol": "npx solhint contracts/**/*.sol  ",
+    "lint:ts": "eslint --ext ts src/**/*.ts",
+    "lint": "npm run lint:ts && npm run lint:sol",
+    "prestats": "npm run build && npm run lint && npm run prettify",
+    "prettify:sol": "prettier --config ./.prettierrc --write \"{src,contracts}/**/*.sol\"",
+    "prettify:ts": "prettier --config ./.prettierrc --write \"./src/**/*.ts\"",
+    "prettify": "npm run prettify:ts && npm run prettify:sol",
+    "test": "npx hardhat test",
+    "verify": "npx hardhat verify",
+    "verify:implem":"npx hardhat verify-implem",
+    "pre-commit": "lint-staged --verbose",
+    "coverage:only": "hardhat coverage",
+    "coverage:check-limit": "node check-coverage-limit.js",
+    "coverage": "npm run clean && npm run coverage:only && npm run coverage:check-limit"
+  },
+  "lint-staged": {
+    "*.ts": "eslint --ignore-path .gitignore  --max-warnings=0",
+    "*.sol": "npm run lint:sol"
+  }
+}

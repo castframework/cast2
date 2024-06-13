@@ -10,7 +10,7 @@ contract SecurityTokenV2 is SecurityToken {
         address registrar,
         address operations,
         address technical
-    ) SmartCoin(registrar, operations, technical) {}
+    ) SecurityToken(registrar, operations, technical) {}
 
     function version() external pure override returns (string memory) {
         return "V2";

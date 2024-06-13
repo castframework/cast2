@@ -10,7 +10,7 @@ contract MissuseAccessControlInternal is ERC1155AccessControlUpgradeable, UUPSUp
         address registrar,
         address operations,
         address technical
-    ) AccessControlUpgradeable(registrar, operations, technical) {}
+    ) ERC1155AccessControlUpgradeable(registrar, operations, technical) {}
 
     function initialize() public initializer {
         __AccessControl_init();

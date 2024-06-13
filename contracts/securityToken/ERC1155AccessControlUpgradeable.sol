@@ -8,8 +8,7 @@ import "./IAccessControl.sol";
 
 abstract contract ERC1155AccessControlUpgradeable is
     IAccessControl,
-    ERC1155PausableUpgradeable,
-    Initializable
+    ERC1155PausableUpgradeable
 {
     /**
      * @dev Used when a method reserved to the registrar operator is called by some other address
@@ -112,7 +111,7 @@ abstract contract ERC1155AccessControlUpgradeable is
     }
 
     // keccak256(abi.encode(uint256(keccak256("sgforge.storage.AccessControl")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant AccessControlStorageLocation = ;
+    bytes32 private constant AccessControlStorageLocation = 0x5b3fd8164fa8df3212fc3e89c5a3ef922df6e80e7134203b2d3bcd6145be3400;
 
     function _getAccessControlStorage() private pure returns (AccessControlStorage storage $) {
         assembly {
@@ -186,26 +185,28 @@ abstract contract ERC1155AccessControlUpgradeable is
      * Throws if `_newImplementation` has not been previously authorized
      */
     modifier consumeAuthorizeImplementation(address _newImplementation) {
-        if (newImplementation != _newImplementation)
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        if ($.newImplementation != _newImplementation)
             revert UnauthorizedImplementation(_newImplementation);
         _;
-        newImplementation = address(0);
+        $.newImplementation = address(0);
     }
     /**
      * @dev Throws if `_registrar`, `_operations` and `_technical` have not all accepted their respective future role
      * and (still) match the values for new contract
      */
-    modifier onlyWhenOperatorsMatchAndAcceptedRole(IAccessControl newImplementation) {
+    modifier onlyWhenOperatorsMatchAndAcceptedRole(IAccessControl _newImplementation) {
+        AccessControlStorage storage $ = _getAccessControlStorage();
         (
             address _registar,
             address _operations,
             address _technical
-        ) = newImplementation.getOperators();
-        if (_registar != newRegistrar || !hasAcceptedRole[_registar])
+        ) = _newImplementation.getOperators();
+        if (_registar != $.newRegistrar || !$.hasAcceptedRole[_registar])
             revert UnauthorizedRegistrar();
-        if (_operations != newOperations || !hasAcceptedRole[_operations])
+        if (_operations != $.newOperations || !$.hasAcceptedRole[_operations])
             revert UnauthorizedOperations();
-        if (_technical != newTechnical || !hasAcceptedRole[_technical])
+        if (_technical != $.newTechnical || !$.hasAcceptedRole[_technical])
             revert UnauthorizedTechnical();
         _;
     }
@@ -290,9 +291,10 @@ abstract contract ERC1155AccessControlUpgradeable is
         )
     {
         _resetNewOperators();
-        newRegistrar = _registrar;
-        newOperations = _operations;
-        newTechnical = _technical;
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        $.newRegistrar = _registrar;
+        $.newOperations = _operations;
+        $.newTechnical = _technical;
         emit NamedNewOperators(_registrar, _operations, _technical);
     }
 
@@ -302,9 +304,10 @@ abstract contract ERC1155AccessControlUpgradeable is
      * NB: only the future registrar operator can call this method
      */
     function acceptRegistrarRole() external {
-        if (newRegistrar != msg.sender) revert UnauthorizedRegistrar();
-        hasAcceptedRole[newRegistrar] = true;
-        emit AcceptedRegistrarRole(newRegistrar);
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        if ($.newRegistrar != msg.sender) revert UnauthorizedRegistrar();
+        $.hasAcceptedRole[$.newRegistrar] = true;
+        emit AcceptedRegistrarRole($.newRegistrar);
     }
 
     /**
@@ -313,9 +316,10 @@ abstract contract ERC1155AccessControlUpgradeable is
      * NB: only the future operations operator can call this method
      */
     function acceptOperationsRole() external {
-        if (newOperations != msg.sender) revert UnauthorizedOperations();
-        hasAcceptedRole[newOperations] = true;
-        emit AcceptedOperationsRole(newOperations);
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        if ($.newOperations != msg.sender) revert UnauthorizedOperations();
+        $.hasAcceptedRole[$.newOperations] = true;
+        emit AcceptedOperationsRole($.newOperations);
     }
 
     /**
@@ -324,9 +328,10 @@ abstract contract ERC1155AccessControlUpgradeable is
      * NB: only the future technical operator can call this method
      */
     function acceptTechnicalRole() external {
-        if (newTechnical != msg.sender) revert UnauthorizedTechnical();
-        hasAcceptedRole[newTechnical] = true;
-        emit AcceptedTechnicalRole(newTechnical);
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        if ($.newTechnical != msg.sender) revert UnauthorizedTechnical();
+        $.hasAcceptedRole[$.newTechnical] = true;
+        emit AcceptedTechnicalRole($.newTechnical);
     }
 
     /**
@@ -341,10 +346,11 @@ abstract contract ERC1155AccessControlUpgradeable is
         external
         onlyRegistrar
         onlyNotZeroAddress(_implementation)
-        onlyWhenOperatorsMatchAndAcceptedRole(ISmartCoin(_implementation))
+        onlyWhenOperatorsMatchAndAcceptedRole(IAccessControl(_implementation))
     {
-        newImplementation = _implementation;
-        emit ImplementationAuthorized(newImplementation);
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        $.newImplementation = _implementation;
+        emit ImplementationAuthorized(_implementation);
     }
 
     function __AccessControl_init() internal onlyInitializing {
@@ -355,9 +361,10 @@ abstract contract ERC1155AccessControlUpgradeable is
      * @dev Internal method that resets new operators' acceptation statuses
      */
     function _resetNewOperators() internal {
-        hasAcceptedRole[newRegistrar] = false;
-        hasAcceptedRole[newOperations] = false;
-        hasAcceptedRole[newTechnical] = false;
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        $.hasAcceptedRole[$.newRegistrar] = false;
+        $.hasAcceptedRole[$.newOperations] = false;
+        $.hasAcceptedRole[$.newTechnical] = false;
     }
 
     function setRegistrarAgent(uint256 _id, address registrarAgent) public onlyRegistrar onlyNotZeroAddress(registrarAgent) onlyWhenRegistrarAgentAlreadySet(_id) {
@@ -376,5 +383,12 @@ abstract contract ERC1155AccessControlUpgradeable is
 
     function unpause() onlyRegistrar() external {
         super._unpause();
+    }
+
+    function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
+        internal
+        override(ERC1155PausableUpgradeable)
+    {
+        super._update(from, to, ids, values);
     }
 }

@@ -14,7 +14,7 @@ interface ISecurityToken {
     }
 
     struct TransferData {
-        string type;
+        string kind;
         string transactionId;
     }
 }

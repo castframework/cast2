@@ -51,4 +51,9 @@ interface IAccessControl {
      * NB: only the (current) registrar operator can call this method
      */
     function authorizeImplementation(address implementation) external;
+
+    /**
+     * @dev Returns the contract's operators' addresses
+     */
+    function getOperators() external view returns (address, address, address);
 }

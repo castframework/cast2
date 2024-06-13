@@ -31,7 +31,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
  */
 contract SecurityToken is
    Initializable,
-   ERC155BurnableUpgradeable,
+   ERC1155AccessControlUpgradeable,
    ERC1155SupplyUpgradeable,
    ERC1155URIStorageUpgradeable,   
    UUPSUpgradeable,
@@ -96,40 +96,26 @@ contract SecurityToken is
             _operations,
             _technical
         )
-        AccessControlUpgradeable(_registrar, _operations, _technical)
+        ERC1155AccessControlUpgradeable(_registrar, _operations, _technical)
     {
         // https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable#potentially-unsafe-operations
         // https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable#initializing_the_implementation_contract
         _disableInitializers();
     }
 
-    function upgradeTo(
-        address _newImplementation
-    )
-        external
-        virtual
-        override
-        onlyProxy
-        consumeAuthorizeImplementation(_newImplementation)
-    {
-        _authorizeUpgrade(_newImplementation);
-        _upgradeToAndCallUUPS(_newImplementation, new bytes(0), false);
-        _resetNewOperators();
-    }
-
     function upgradeToAndCall(
         address _newImplementation,
         bytes memory data
     )
-        external
+        public
         payable
         virtual
         override
         onlyProxy
         consumeAuthorizeImplementation(_newImplementation)
     {
-        _authorizeUpgrade(_newImplementation);
-        _upgradeToAndCallUUPS(_newImplementation, data, true);
+
+        super.upgradeToAndCall(_newImplementation, data);
         _resetNewOperators();
     }
 
@@ -144,7 +130,7 @@ contract SecurityToken is
      * @dev UUPS initializer that initializes the token's name and symbol
      */
     function initialize(
-        string memory _baseUri,
+        string memory _baseUri
     ) public initializer {
         __ERC1155_init(_baseUri);
         __ERC1155URIStorage_init();
@@ -165,7 +151,7 @@ contract SecurityToken is
      */
     // todo : either this or burn(_id, _amount) to only burn on registrar's account
     function burn(address _account, uint256 _id, uint256 _amount) external onlyRegistrar onlyWhenBalanceAvailable(_account, _id, _amount) {
-        super._burn(account, id, _amount);
+        super._burn(_account, _id, _amount);
     }
 
     /**
@@ -178,8 +164,8 @@ contract SecurityToken is
         uint256 _id,
         uint256 _amount,
         bytes calldata data
-    ) external override onlyRegistrar returns (bool) {
-        SecurityTokenStorage $ = _getSecurityTokenStorage();
+    ) external onlyRegistrar returns (bool) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         if (data.length != 0) {
             require(!$._minted[_id], TokenAlreadyMinted(_id));
             MintData memory mintData = abi.decode(data, (MintData));            
@@ -191,6 +177,17 @@ contract SecurityToken is
         }
         super._mint(_to, _id, _amount);
         return true;
+    }
+
+    function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
+        internal
+        override(ERC1155SupplyUpgradeable, ERC1155AccessControlUpgradeable)
+    {
+        super._update(from, to, ids, values);
+    }
+
+    function uri(uint256 _id) public view override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable) returns (string memory) {
+        super.uri(_id);
     }
 
    /**
@@ -208,7 +205,7 @@ contract SecurityToken is
      */
     function balanceOf(
         address _addr, uint256 _id
-    ) public view override(ERC1155Upgradeable, ISmartCoin) returns (uint256) {
+    ) public view override(ERC1155Upgradeable) returns (uint256) {
         return _availableBalance(_addr, _id);
     }
 
@@ -216,7 +213,8 @@ contract SecurityToken is
      * @dev Returns current amount engaged in transfer requests for `addr` account and `id` token
      */
     function engagedAmount(address _addr, uint256 _id) public view returns (uint256) {
-        return _engagedAmount[_id][_addr];
+        SecurityTokenStorage memory $ = _getSecurityTokenStorage();
+        return $._engagedAmount[_id][_addr];
     }
 
     // solhint-disable-next-line no-empty-blocks
@@ -228,8 +226,9 @@ contract SecurityToken is
      * @dev Internal method that computes the available(i.e. not engaged) balance
      */
     function _availableBalance(address _addr, uint256 _id) internal view returns (uint256) {
+        SecurityTokenStorage memory $ = _getSecurityTokenStorage();
         unchecked {
-            return super.balanceOf(_addr, _id) - _engagedAmount[_id][_addr]; // No overflow since balance >= engagedAmount
+            return super.balanceOf(_addr, _id) - $._engagedAmount[_id][_addr]; // No overflow since balance >= engagedAmount
         }
     }
 

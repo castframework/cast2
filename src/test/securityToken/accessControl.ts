@@ -1,4 +1,4 @@
-import { MissuseAccessControlInternal, SmartCoin } from '../../../dist/types';
+import { MissuseAccessControlInternal, SecurityToken } from '../../../dist/types';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import {
@@ -12,8 +12,8 @@ import { Signer } from 'ethers';
 
 
 
-context('SmartCoin', () => {
-  let smartCoinProxy: SmartCoin;
+context('SecurityToken', () => {
+  let securityTokenProxy: SecurityToken;
   let signers: {
     registrar: Signer;
     issuer: Signer;
@@ -34,7 +34,7 @@ context('SmartCoin', () => {
 
   context('SmartCoin: naming operators', async function () {
     beforeEach(async () => {
-      smartCoinProxy = await loadFixture(deploySmartCoinFixture);
+      securityTokenProxy = await loadFixture(deploySmartCoinFixture);
 
       signers = await getOperatorSigners();
 
@@ -47,29 +47,29 @@ context('SmartCoin', () => {
     });
     context('should not accept naming Zero Address operator', async () => {
       it('should not be able to name a zero address registrar', async () => {
-        const nameOperators = smartCoinProxy
+        const nameOperators = securityTokenProxy
           .connect(signers.registrar)
           .nameNewOperators(ZERO_ADDRESS, operationsAddress, technicalAddress);
         await expect(nameOperators).to.be.revertedWithCustomError(
-          smartCoinProxy,
+          securityTokenProxy,
           `ZeroAddressCheck`,
         );
       });
       it('should not be able to name a zero address operations', async () => {
-        const nameOperators = smartCoinProxy
+        const nameOperators = securityTokenProxy
           .connect(signers.registrar)
           .nameNewOperators(registrarAddress, ZERO_ADDRESS, technicalAddress);
         await expect(nameOperators).to.be.revertedWithCustomError(
-          smartCoinProxy,
+          securityTokenProxy,
           `ZeroAddressCheck`,
         );
       });
       it('should not be able to name a zero address technical', async () => {
-        const nameOperators = smartCoinProxy
+        const nameOperators = securityTokenProxy
           .connect(signers.registrar)
           .nameNewOperators(registrarAddress, operationsAddress, ZERO_ADDRESS);
         await expect(nameOperators).to.be.revertedWithCustomError(
-          smartCoinProxy,
+          securityTokenProxy,
           `ZeroAddressCheck`,
         );
       });
@@ -77,7 +77,7 @@ context('SmartCoin', () => {
     context('should accept only authorized role', async () => {
       let nameNewOperatorsTransaction;
       beforeEach(async () => {
-        nameNewOperatorsTransaction = await smartCoinProxy
+        nameNewOperatorsTransaction = await securityTokenProxy
           .connect(signers.registrar)
           .nameNewOperators(
             registrarAddress,
@@ -87,11 +87,11 @@ context('SmartCoin', () => {
       });
       it('should emit an event NamedNewOperatots', async () => {
         await expect(nameNewOperatorsTransaction)
-          .to.emit(smartCoinProxy, 'NamedNewOperators')
+          .to.emit(securityTokenProxy, 'NamedNewOperators')
           .withArgs(registrarAddress, operationsAddress, technicalAddress);
       });
       it('only registrar could name new operators', async () => {
-        const nameNewOperators = smartCoinProxy
+        const nameNewOperators = securityTokenProxy
           .connect(signers.investor1)
           .nameNewOperators(
             registrarAddress,
@@ -99,145 +99,145 @@ context('SmartCoin', () => {
             technicalAddress,
           );
         await expect(nameNewOperators).to.be.revertedWithCustomError(
-          smartCoinProxy,
+          securityTokenProxy,
           `UnauthorizedRegistrar`,
         );
       });
       it('should not be able to accept unauthorized registrar role', async () => {
-        const acceptRegistrarRole = smartCoinProxy
+        const acceptRegistrarRole = securityTokenProxy
           .connect(signers.investor1)
           .acceptRegistrarRole();
         await expect(acceptRegistrarRole).to.be.revertedWithCustomError(
-          smartCoinProxy,
+          securityTokenProxy,
           `UnauthorizedRegistrar`,
         );
       });
       it('should not be able to accept unauthorized operations role', async () => {
-        const acceptOperationsRole = smartCoinProxy
+        const acceptOperationsRole = securityTokenProxy
           .connect(signers.investor1)
           .acceptOperationsRole();
         await expect(acceptOperationsRole).to.be.revertedWithCustomError(
-          smartCoinProxy,
+          securityTokenProxy,
           `UnauthorizedOperations`,
         );
       });
       it('should not be able to accept unauthorized technical role', async () => {
-        const acceptTechnicalRole = smartCoinProxy
+        const acceptTechnicalRole = securityTokenProxy
           .connect(signers.investor1)
           .acceptTechnicalRole();
         await expect(acceptTechnicalRole).to.be.revertedWithCustomError(
-          smartCoinProxy,
+          securityTokenProxy,
           `UnauthorizedTechnical`,
         );
       });
 
       it('should be able to accept authorized registrar role', async () => {
-        const acceptRegistrarRole = await smartCoinProxy
+        const acceptRegistrarRole = await securityTokenProxy
           .connect(signers.registrar)
           .acceptRegistrarRole();
         await expect(acceptRegistrarRole)
-          .to.emit(smartCoinProxy, 'AcceptedRegistrarRole')
+          .to.emit(securityTokenProxy, 'AcceptedRegistrarRole')
           .withArgs(registrarAddress);
       });
       it('should be able to accept authorized operations role', async () => {
-        const acceptOperationsRole = await smartCoinProxy
+        const acceptOperationsRole = await securityTokenProxy
           .connect(signers.operations)
           .acceptOperationsRole();
         await expect(acceptOperationsRole)
-          .to.emit(smartCoinProxy, 'AcceptedOperationsRole')
+          .to.emit(securityTokenProxy, 'AcceptedOperationsRole')
           .withArgs(operationsAddress);
       });
       it('should be able to accept authorized technical role', async () => {
-        const acceptTechnicalRole = await smartCoinProxy
+        const acceptTechnicalRole = await securityTokenProxy
           .connect(signers.technical)
           .acceptTechnicalRole();
         await expect(acceptTechnicalRole)
-          .to.emit(smartCoinProxy, 'AcceptedTechnicalRole')
+          .to.emit(securityTokenProxy, 'AcceptedTechnicalRole')
           .withArgs(technicalAddress);
       });
     });
 
     it('should freeze an address', async () => {
-      const addAddressTransaction = await smartCoinProxy
+      const addAddressTransaction = await securityTokenProxy
         .connect(signers.registrar)
         .freeze([investor1Address]);
 
       await expect(addAddressTransaction)
-        .to.emit(smartCoinProxy, 'AddressesFrozen')
+        .to.emit(securityTokenProxy, 'AddressesFrozen')
         .withArgs([investor1Address]);
     });
     it('should get not frozen addresses from a list of addresses', async () => {
-      await smartCoinProxy
+      await securityTokenProxy
         .connect(signers.registrar)
         .freeze([investor1Address]);
 
-      await expect((await smartCoinProxy.findNotFrozen([investor1Address, investor2Address, registrarAddress]))).to.deep.eq([investor2Address, registrarAddress])
+      await expect((await securityTokenProxy.findNotFrozen([investor1Address, investor2Address, registrarAddress]))).to.deep.eq([investor2Address, registrarAddress])
     });
 
     it('should unfreeze an address', async () => {
-      await smartCoinProxy
+      await securityTokenProxy
         .connect(signers.registrar)
         .freeze([investor2Address]);
 
-      const removeFromAccessControlTransaction = await smartCoinProxy
+      const removeFromAccessControlTransaction = await securityTokenProxy
         .connect(signers.registrar)
         .unfreeze([investor2Address]);
 
       await expect(removeFromAccessControlTransaction)
-        .to.emit(smartCoinProxy, 'AddressesUnFrozen')
+        .to.emit(securityTokenProxy, 'AddressesUnFrozen')
         .withArgs([investor2Address]);
     });
 
     it('should reject blacklist an already frozen address', async () => {
-      await smartCoinProxy
+      await securityTokenProxy
         .connect(signers.registrar)
         .freeze([investor2Address]);
 
       await expect(
-        smartCoinProxy
+        securityTokenProxy
           .connect(signers.registrar)
           .freeze([investor2Address]),
       ).to.be.revertedWithCustomError(
-        smartCoinProxy,
+        securityTokenProxy,
         `AddressAlreadyFrozen`,
       );
     });
 
     it('should reject unfreeze an already unfrozen address', async () => {
-      await smartCoinProxy
+      await securityTokenProxy
         .connect(signers.registrar)
         .freeze([investor2Address]);
 
-      await smartCoinProxy
+      await securityTokenProxy
         .connect(signers.registrar)
         .unfreeze([investor2Address]);
 
       await expect(
-        smartCoinProxy
+        securityTokenProxy
           .connect(signers.registrar)
           .unfreeze([investor2Address]),
       )
-        .to.be.revertedWithCustomError(smartCoinProxy, `AddressNotFrozen`)
+        .to.be.revertedWithCustomError(securityTokenProxy, `AddressNotFrozen`)
         .withArgs(investor2Address);
     });
 
     it('only registrar could freeze an address', async () => {
       await expect(
-        smartCoinProxy
+        securityTokenProxy
           .connect(signers.investor3)
           .freeze([investor2Address]),
-      ).to.be.revertedWithCustomError(smartCoinProxy, `UnauthorizedRegistrar`);
+      ).to.be.revertedWithCustomError(securityTokenProxy, `UnauthorizedRegistrar`);
     });
     it('only registrar could unfreeze an address', async () => {
-      await smartCoinProxy
+      await securityTokenProxy
         .connect(signers.registrar)
         .freeze([investor2Address]);
 
       await expect(
-        smartCoinProxy
+        securityTokenProxy
           .connect(signers.investor3)
           .unfreeze([investor2Address]),
-      ).to.be.revertedWithCustomError(smartCoinProxy, `UnauthorizedRegistrar`);
+      ).to.be.revertedWithCustomError(securityTokenProxy, `UnauthorizedRegistrar`);
     });
   });
   context(
@@ -248,98 +248,98 @@ context('SmartCoin', () => {
         newSmartCoinV3Address = await loadFixture(deploySmartCoinV3Fixture);
       });
       it('only registar could authorize new implementation', async function () {
-        await smartCoinProxy
+        await securityTokenProxy
           .connect(signers.registrar)
           .nameNewOperators(
             registrarAddress,
             operationsAddress,
             technicalAddress,
           );
-        await smartCoinProxy.connect(signers.operations).acceptOperationsRole();
-        await smartCoinProxy.connect(signers.registrar).acceptRegistrarRole();
-        await smartCoinProxy.connect(signers.technical).acceptTechnicalRole();
-        const authorizeImplementation = smartCoinProxy
+        await securityTokenProxy.connect(signers.operations).acceptOperationsRole();
+        await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
+        await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
+        const authorizeImplementation = securityTokenProxy
           .connect(signers.technical)
           .authorizeImplementation(newSmartCoinV3Address);
         await expect(authorizeImplementation).to.be.revertedWithCustomError(
-          smartCoinProxy,
+          securityTokenProxy,
           `UnauthorizedRegistrar`,
         );
       });
       it('only not zero address implementation should be authorized', async function () {
-        await smartCoinProxy
+        await securityTokenProxy
           .connect(signers.registrar)
           .nameNewOperators(
             registrarAddress,
             operationsAddress,
             technicalAddress,
           );
-        await smartCoinProxy.connect(signers.operations).acceptOperationsRole();
-        await smartCoinProxy.connect(signers.registrar).acceptRegistrarRole();
-        await smartCoinProxy.connect(signers.technical).acceptTechnicalRole();
-        const authorizeImplementation = smartCoinProxy
+        await securityTokenProxy.connect(signers.operations).acceptOperationsRole();
+        await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
+        await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
+        const authorizeImplementation = securityTokenProxy
           .connect(signers.registrar)
           .authorizeImplementation(ZERO_ADDRESS);
         await expect(authorizeImplementation).to.be.revertedWithCustomError(
-          smartCoinProxy,
+          securityTokenProxy,
           `ZeroAddressCheck`,
         );
       });
       it('should fail with registrar did not match implementation registrar', async function () {
-        await smartCoinProxy
+        await securityTokenProxy
           .connect(signers.registrar)
           .nameNewOperators(
             investor1Address,
             operationsAddress,
             technicalAddress,
           );
-        await smartCoinProxy.connect(signers.operations).acceptOperationsRole();
-        await smartCoinProxy.connect(signers.investor1).acceptRegistrarRole();
-        await smartCoinProxy.connect(signers.technical).acceptTechnicalRole();
-        const authorizeImplementation = smartCoinProxy
+        await securityTokenProxy.connect(signers.operations).acceptOperationsRole();
+        await securityTokenProxy.connect(signers.investor1).acceptRegistrarRole();
+        await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
+        const authorizeImplementation = securityTokenProxy
           .connect(signers.registrar)
           .authorizeImplementation(newSmartCoinV3Address);
         await expect(authorizeImplementation).to.be.revertedWithCustomError(
-          smartCoinProxy,
+          securityTokenProxy,
           `UnauthorizedRegistrar`,
         );
       });
       it('should fail with technical did not match implementation technical', async function () {
-        await smartCoinProxy
+        await securityTokenProxy
           .connect(signers.registrar)
           .nameNewOperators(
             registrarAddress,
             operationsAddress,
             investor1Address,
           );
-        await smartCoinProxy.connect(signers.operations).acceptOperationsRole();
-        await smartCoinProxy.connect(signers.registrar).acceptRegistrarRole();
-        await smartCoinProxy.connect(signers.investor1).acceptTechnicalRole();
+        await securityTokenProxy.connect(signers.operations).acceptOperationsRole();
+        await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
+        await securityTokenProxy.connect(signers.investor1).acceptTechnicalRole();
 
-        const authorizeImplementation = smartCoinProxy
+        const authorizeImplementation = securityTokenProxy
           .connect(signers.registrar)
           .authorizeImplementation(newSmartCoinV3Address);
         await expect(authorizeImplementation).to.be.revertedWithCustomError(
-          smartCoinProxy,
+          securityTokenProxy,
           `UnauthorizedTechnical`,
         );
       });
       it('should fail with operations did not match implementation operations', async function () {
-        await smartCoinProxy
+        await securityTokenProxy
           .connect(signers.registrar)
           .nameNewOperators(
             registrarAddress,
             investor1Address,
             technicalAddress,
           );
-        await smartCoinProxy.connect(signers.technical).acceptTechnicalRole();
-        await smartCoinProxy.connect(signers.registrar).acceptRegistrarRole();
-        await smartCoinProxy.connect(signers.investor1).acceptOperationsRole();
-        const authorizeImplementation = smartCoinProxy
+        await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
+        await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
+        await securityTokenProxy.connect(signers.investor1).acceptOperationsRole();
+        const authorizeImplementation = securityTokenProxy
           .connect(signers.registrar)
           .authorizeImplementation(newSmartCoinV3Address);
         await expect(authorizeImplementation).to.be.revertedWithCustomError(
-          smartCoinProxy,
+          securityTokenProxy,
           `UnauthorizedOperations`,
         );
       });

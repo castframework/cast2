@@ -8,9 +8,8 @@ contract SecurityTokenV2 is SecurityToken {
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         address registrar,
-        address operations,
         address technical
-    ) SecurityToken(registrar, operations, technical) {}
+    ) SecurityToken(registrar, technical) {}
 
     function version() external pure override returns (string memory) {
         return "V2";

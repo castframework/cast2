@@ -19,10 +19,6 @@ abstract contract ERC1155AccessControlUpgradeable is
      */
     error ForbiddenForRegistrar();
     /**
-     * @dev Used when the registar operator's address is used as parameter where it's not allowed
-     */
-    error ForbiddenForOperations();
-    /**
      * @dev Used when `addr` address is not authorized to perform an action
      */
     error Unauthorized(address addr);
@@ -38,10 +34,6 @@ abstract contract ERC1155AccessControlUpgradeable is
      * @dev Used when a method reserved to the technical operator is called by some other address
      */
     error UnauthorizedTechnical();
-    /**
-     * @dev Used when a method reserved to the operations operator is called by some other address
-     */
-    error UnauthorizedOperations();
     /**
      * @dev Used when trying to unfreeze an address and the address is not frozen
      */
@@ -91,10 +83,6 @@ abstract contract ERC1155AccessControlUpgradeable is
          */
         address newRegistrar;
         /**
-         * @dev Address of the future new operations operator
-         */
-        address newOperations;
-        /**
          * @dev Address of the future new technical operator
          */
         address newTechnical;
@@ -130,11 +118,6 @@ abstract contract ERC1155AccessControlUpgradeable is
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
     address public immutable registrar;
     /**
-     * @dev Current operations operator's address
-     */
-    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    address public immutable operations;
-    /**
      * @dev Current technical operator's address
      */
     /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
@@ -158,12 +141,9 @@ abstract contract ERC1155AccessControlUpgradeable is
 
     modifier onlyWhenOperatorsHaveDifferentAddress(
         address _registrar,
-        address _operations,
         address _technical
     ) {
         if (
-            _registrar == _operations ||
-            _operations == _technical ||
             _registrar == _technical
         ) revert InconsistentOperators();
         _;
@@ -174,14 +154,6 @@ abstract contract ERC1155AccessControlUpgradeable is
      */
     modifier forbiddenForRegistrar(address _addr) {
         if (_addr == registrar) revert ForbiddenForRegistrar();
-        _;
-    }
-
-    /**
-     * @dev Throws if addr is operations
-     */
-    modifier forbiddenForOperations(address _addr) {
-        if (_addr == operations) revert ForbiddenForOperations();
         _;
     }
 
@@ -206,13 +178,10 @@ abstract contract ERC1155AccessControlUpgradeable is
         AccessControlStorage storage $ = _getAccessControlStorage();
         (
             address _registar,
-            address _operations,
             address _technical
         ) = _newImplementation.getOperators();
         if (_registar != $.newRegistrar || !$.hasAcceptedRole[_registar])
             revert UnauthorizedRegistrar();
-        if (_operations != $.newOperations || !$.hasAcceptedRole[_operations])
-            revert UnauthorizedOperations();
         if (_technical != $.newTechnical || !$.hasAcceptedRole[_technical])
             revert UnauthorizedTechnical();
         _;
@@ -274,17 +243,16 @@ abstract contract ERC1155AccessControlUpgradeable is
     }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor(address _registrar, address _operations, address _technical) {
+    constructor(address _registrar, address _technical) {
         registrar = _registrar;
-        operations = _operations;
         technical = _technical;
     }
 
     /**
      * @dev Returns the contract's operators' addresses
      */
-    function getOperators() external view returns (address, address, address) {
-        return (registrar, operations, technical);
+    function getOperators() external view returns (address, address) {
+        return (registrar, technical);
     }
 
     /**
@@ -295,26 +263,22 @@ abstract contract ERC1155AccessControlUpgradeable is
      */
     function nameNewOperators(
         address _registrar,
-        address _operations,
         address _technical
     )
         external
         onlyRegistrar
         onlyNotZeroAddress(_registrar)
-        onlyNotZeroAddress(_operations)
         onlyNotZeroAddress(_technical)
         onlyWhenOperatorsHaveDifferentAddress(
             _registrar,
-            _operations,
             _technical
         )
     {
         _resetNewOperators();
         AccessControlStorage storage $ = _getAccessControlStorage();
         $.newRegistrar = _registrar;
-        $.newOperations = _operations;
         $.newTechnical = _technical;
-        emit NamedNewOperators(_registrar, _operations, _technical);
+        emit NamedNewOperators(_registrar, _technical);
     }
 
     /**
@@ -327,18 +291,6 @@ abstract contract ERC1155AccessControlUpgradeable is
         if ($.newRegistrar != msg.sender) revert UnauthorizedRegistrar();
         $.hasAcceptedRole[$.newRegistrar] = true;
         emit AcceptedRegistrarRole($.newRegistrar);
-    }
-
-    /**
-     * @dev Accepts the future operations role
-     * and emits a corresponding `AcceptedOperationsRole` event
-     * NB: only the future operations operator can call this method
-     */
-    function acceptOperationsRole() external {
-        AccessControlStorage storage $ = _getAccessControlStorage();
-        if ($.newOperations != msg.sender) revert UnauthorizedOperations();
-        $.hasAcceptedRole[$.newOperations] = true;
-        emit AcceptedOperationsRole($.newOperations);
     }
 
     /**
@@ -382,7 +334,6 @@ abstract contract ERC1155AccessControlUpgradeable is
     function _resetNewOperators() internal {
         AccessControlStorage storage $ = _getAccessControlStorage();
         $.hasAcceptedRole[$.newRegistrar] = false;
-        $.hasAcceptedRole[$.newOperations] = false;
         $.hasAcceptedRole[$.newTechnical] = false;
     }
 

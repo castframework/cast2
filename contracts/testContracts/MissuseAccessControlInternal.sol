@@ -8,9 +8,8 @@ import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 contract MissuseAccessControlInternal is ERC1155AccessControlUpgradeable, UUPSUpgradeable {
     constructor(
         address registrar,
-        address operations,
         address technical
-    ) ERC1155AccessControlUpgradeable(registrar, operations, technical) {}
+    ) ERC1155AccessControlUpgradeable(registrar, technical) {}
 
     function initialize() public initializer {
         __AccessControl_init();

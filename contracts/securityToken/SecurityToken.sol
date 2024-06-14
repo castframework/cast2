@@ -88,18 +88,15 @@ contract SecurityToken is
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
         address _registrar,
-        address _operations,
         address _technical
     )
         onlyNotZeroAddress(_registrar)
-        onlyNotZeroAddress(_operations)
         onlyNotZeroAddress(_technical)
         onlyWhenOperatorsHaveDifferentAddress(
             _registrar,
-            _operations,
             _technical
         )
-        ERC1155AccessControlUpgradeable(_registrar, _operations, _technical)
+        ERC1155AccessControlUpgradeable(_registrar, _technical)
     {
         // https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable#potentially-unsafe-operations
         // https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable#initializing_the_implementation_contract
@@ -190,7 +187,7 @@ contract SecurityToken is
     }
 
     function uri(uint256 _id) public view override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable) returns (string memory) {
-        super.uri(_id);
+        return super.uri(_id);
     }
 
    /**

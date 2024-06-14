@@ -8,17 +8,12 @@ interface IAccessControl {
      */
     event NamedNewOperators(
         address registrar,
-        address operations,
         address technical
     );
     /**
      * @dev Emitted when the future new registrar operator has accepted the role
      */
     event AcceptedRegistrarRole(address registrar);
-    /**
-     * @dev Emitted when the future new operations operator has accepted the role
-     */
-    event AcceptedOperationsRole(address operations);
     /**
      * @dev Emitted when the future new technical operator has accepted the role
      */
@@ -35,12 +30,6 @@ interface IAccessControl {
     function acceptRegistrarRole() external;
 
     /**
-     * @dev Accepts the future operations role
-     * NB: only the future operations operator can call this method
-     */
-    function acceptOperationsRole() external;
-
-    /**
      * @dev Accepts the future technical role
      * NB: only the future technical operator can call this method
      */
@@ -55,5 +44,5 @@ interface IAccessControl {
     /**
      * @dev Returns the contract's operators' addresses
      */
-    function getOperators() external view returns (address, address, address);
+    function getOperators() external view returns (address, address);
 }

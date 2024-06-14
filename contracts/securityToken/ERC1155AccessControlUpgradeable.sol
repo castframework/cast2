@@ -78,7 +78,7 @@ abstract contract ERC1155AccessControlUpgradeable is
      * @dev Used when a method reserved to the registrar agent is called by some other address
      */
     error UnauthorizedRegistrarAgent(uint256 id);
-    
+
     /**
      * @dev Used when a method reserved to the settlement agent is called by some other address
      */
@@ -107,13 +107,18 @@ abstract contract ERC1155AccessControlUpgradeable is
          */
         address newImplementation;
         mapping(uint256 => address) registrarAgentByTokenId;
-        mapping(uint256 => address) settlementAgentByTokenId;      
+        mapping(uint256 => address) settlementAgentByTokenId;
     }
 
     // keccak256(abi.encode(uint256(keccak256("sgforge.storage.AccessControl")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant AccessControlStorageLocation = 0x5b3fd8164fa8df3212fc3e89c5a3ef922df6e80e7134203b2d3bcd6145be3400;
+    bytes32 private constant AccessControlStorageLocation =
+        0x5b3fd8164fa8df3212fc3e89c5a3ef922df6e80e7134203b2d3bcd6145be3400;
 
-    function _getAccessControlStorage() private pure returns (AccessControlStorage storage $) {
+    function _getAccessControlStorage()
+        private
+        pure
+        returns (AccessControlStorage storage $)
+    {
         assembly {
             $.slot := AccessControlStorageLocation
         }
@@ -195,7 +200,9 @@ abstract contract ERC1155AccessControlUpgradeable is
      * @dev Throws if `_registrar`, `_operations` and `_technical` have not all accepted their respective future role
      * and (still) match the values for new contract
      */
-    modifier onlyWhenOperatorsMatchAndAcceptedRole(IAccessControl _newImplementation) {
+    modifier onlyWhenOperatorsMatchAndAcceptedRole(
+        IAccessControl _newImplementation
+    ) {
         AccessControlStorage storage $ = _getAccessControlStorage();
         (
             address _registar,
@@ -223,7 +230,10 @@ abstract contract ERC1155AccessControlUpgradeable is
      */
     modifier onlyWhenRegistrarAgentAlreadySet(uint256 _id) {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        require($.registrarAgentByTokenId[_id] != address(0), NoRegistrarAgentCurrentlySet());
+        require(
+            $.registrarAgentByTokenId[_id] != address(0),
+            NoRegistrarAgentCurrentlySet()
+        );
         _;
     }
 
@@ -232,7 +242,10 @@ abstract contract ERC1155AccessControlUpgradeable is
      */
     modifier onlyWhenSettlementAgentAlreadySet(uint256 _id) {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        require($.settlementAgentByTokenId[_id] != address(0), NoSettlementAgentCurrentlySet());
+        require(
+            $.settlementAgentByTokenId[_id] != address(0),
+            NoSettlementAgentCurrentlySet()
+        );
         _;
     }
 
@@ -241,7 +254,10 @@ abstract contract ERC1155AccessControlUpgradeable is
      */
     modifier onlyRegistrarAgent(uint256 _id) {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        require(msg.sender == $.registrarAgentByTokenId[_id], UnauthorizedRegistrarAgent(_id));
+        require(
+            msg.sender == $.registrarAgentByTokenId[_id],
+            UnauthorizedRegistrarAgent(_id)
+        );
         _;
     }
 
@@ -250,7 +266,10 @@ abstract contract ERC1155AccessControlUpgradeable is
      */
     modifier onlySettlementAgent(uint256 _id) {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        require(msg.sender == $.settlementAgentByTokenId[_id], UnauthorizedSettlementAgent(_id));
+        require(
+            msg.sender == $.settlementAgentByTokenId[_id],
+            UnauthorizedSettlementAgent(_id)
+        );
         _;
     }
 
@@ -367,28 +386,46 @@ abstract contract ERC1155AccessControlUpgradeable is
         $.hasAcceptedRole[$.newTechnical] = false;
     }
 
-    function setRegistrarAgent(uint256 _id, address registrarAgent) public onlyRegistrar onlyNotZeroAddress(registrarAgent) onlyWhenRegistrarAgentAlreadySet(_id) {
+    function setRegistrarAgent(
+        uint256 _id,
+        address registrarAgent
+    )
+        public
+        onlyRegistrar
+        onlyNotZeroAddress(registrarAgent)
+        onlyWhenRegistrarAgentAlreadySet(_id)
+    {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        $.registrarAgentByTokenId[_id] = registrarAgent;        
+        $.registrarAgentByTokenId[_id] = registrarAgent;
     }
 
-    function setSettlementAgent(uint256 _id, address settlementAgent) public onlyRegistrar onlyNotZeroAddress(settlementAgent) onlyWhenSettlementAgentAlreadySet(_id) {
+    function setSettlementAgent(
+        uint256 _id,
+        address settlementAgent
+    )
+        public
+        onlyRegistrar
+        onlyNotZeroAddress(settlementAgent)
+        onlyWhenSettlementAgentAlreadySet(_id)
+    {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        $.settlementAgentByTokenId[_id] = settlementAgent;        
+        $.settlementAgentByTokenId[_id] = settlementAgent;
     }
 
-    function pause() onlyRegistrar() external {
+    function pause() external onlyRegistrar {
         super._pause();
     }
 
-    function unpause() onlyRegistrar() external {
+    function unpause() external onlyRegistrar {
         super._unpause();
     }
 
-    function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
-        internal
-        override(ERC1155PausableUpgradeable)
-    {
+    function _update(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    ) internal virtual override(ERC1155PausableUpgradeable) {
         super._update(from, to, ids, values);
     }
 }

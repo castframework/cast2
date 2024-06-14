@@ -98,6 +98,7 @@ module.exports = {
   solidity: {
     version: '0.8.26',
     settings: {
+      viaIR: true,//TODO a discuter pour les custom errors in require
       optimizer: {
         enabled: true,
         runs: 200,
@@ -120,11 +121,6 @@ module.exports = {
     tests: './src/test',
     cache: './cache',
     artifacts: './dist',
-  },
-  typechain: {
-    outDir: 'dist/types',
-    target: 'ethers-v5',
-    alwaysGenerateOverloads: false, // should overloads with full signatures like deposit(uint256) be generated always, even if there are no overloads?
   },
   networks: buildNetworkFromEnv(),
   etherscan: {

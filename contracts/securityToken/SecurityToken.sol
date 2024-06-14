@@ -37,6 +37,9 @@ contract SecurityToken is
    UUPSUpgradeable,
    ISecurityToken
 {
+    string constant TRANFER_TYPE_DIRECT = "Direct";
+    string constant TRANFER_TYPE_LOCK = "Lock";
+    string constant TRANFER_TYPE_UNKNOWN = "";
     /**
     * @dev Used when "available" balance is insufficient
     */
@@ -71,8 +74,8 @@ contract SecurityToken is
      * which is a two-step transfer back to the registrar operator or the operations operator
      * (initiated with the transfer() method)
      */
-    modifier onlyWhenBalanceAvailable(uint256 _id, address _from, uint256 _value) {
-        uint256 availableBalance = _availableBalance(_id, _from);
+    modifier onlyWhenBalanceAvailable(address _from, uint256 _id, uint256 _value) {
+        uint256 availableBalance = _availableBalance(_from, _id);
         if (_value > availableBalance)
             revert InsufficientBalance({
                 id: _id,
@@ -175,15 +178,15 @@ contract SecurityToken is
         } else {
             require($._minted[_id], TokenNotAlreadyMinted(_id));            
         }
-        super._mint(_to, _id, _amount);
+        super._mint(_to, _id, _amount, data);
         return true;
     }
 
     function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
         internal
-        override(ERC1155SupplyUpgradeable, ERC1155AccessControlUpgradeable)
+        override(ERC1155Upgradeable, ERC1155SupplyUpgradeable, ERC1155AccessControlUpgradeable)
     {
-        super._update(from, to, ids, values);
+        super._update(from, to, ids, values);//TODO check which parent class this method call
     }
 
     function uri(uint256 _id) public view override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable) returns (string memory) {
@@ -213,7 +216,7 @@ contract SecurityToken is
      * @dev Returns current amount engaged in transfer requests for `addr` account and `id` token
      */
     function engagedAmount(address _addr, uint256 _id) public view returns (uint256) {
-        SecurityTokenStorage memory $ = _getSecurityTokenStorage();
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         return $._engagedAmount[_id][_addr];
     }
 
@@ -226,7 +229,7 @@ contract SecurityToken is
      * @dev Internal method that computes the available(i.e. not engaged) balance
      */
     function _availableBalance(address _addr, uint256 _id) internal view returns (uint256) {
-        SecurityTokenStorage memory $ = _getSecurityTokenStorage();
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         unchecked {
             return super.balanceOf(_addr, _id) - $._engagedAmount[_id][_addr]; // No overflow since balance >= engagedAmount
         }

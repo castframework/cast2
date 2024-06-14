@@ -1,65 +1,64 @@
-import { MissuseAccessControlInternal, SmartCoin } from '../../../dist/types/';
+import { MissuseAccessControlInternal, SecurityToken } from '../../../dist/types/';
 import { ethers, upgrades } from 'hardhat';
 import { getOperatorSigners } from './signers';
-import { TOKEN_NAME, TOKEN_SYMBOL } from './contants';
+import { BASE_URI } from './constants';
 
-export async function getSmartCoinOperatorsAddresses(): Promise<string[]> {
+export async function getSecurityTokenOperatorsAddresses(): Promise<string[]> {
   const signers = await getOperatorSigners();
 
   const registrarAddress = await signers.registrar.getAddress();
-  const operationsAddress = await signers.operations.getAddress();
   const technicalAddress = await signers.technical.getAddress();
-  return [registrarAddress, operationsAddress, technicalAddress];
+  return [registrarAddress, technicalAddress];
 }
 
-export async function deploySmartCoinFixture(): Promise<SmartCoin> {
-  const SmartCoin = await ethers.getContractFactory('SmartCoin');
+export async function deploySecurityTokenFixture(): Promise<SecurityToken> {
+  const SecurityToken = await ethers.getContractFactory('SecurityToken');
 
-  const smartCoinsOperators: Array<string> =
-    await getSmartCoinOperatorsAddresses();
-  const smartCoinProxyfiedInstance = (await upgrades.deployProxy(
-    SmartCoin,
-    [TOKEN_NAME, TOKEN_SYMBOL],
+  const securityTokenOperators: Array<string> =
+    await getSecurityTokenOperatorsAddresses();
+  const securityTokenProxyfiedInstance = (await upgrades.deployProxy(
+    SecurityToken,
+    [BASE_URI],
     {
       kind: 'uups',
-      constructorArgs: smartCoinsOperators,
+      constructorArgs: securityTokenOperators,
       unsafeAllow: ['constructor'],
     },
-  )) as SmartCoin;
-  return smartCoinProxyfiedInstance;
+  )) as SecurityToken;
+  return securityTokenProxyfiedInstance;
 }
 
-export async function deploySmartCoinV3Fixture(): Promise<string> {
+export async function deploySecurityTokenV2Fixture(): Promise<string> {
   const signers = await getOperatorSigners();
 
-  const SmartCoinV3Factory = await ethers.getContractFactory(
-    'SmartCoinV3',
+  const SecurityTokenV2Factory = await ethers.getContractFactory(
+    'SecurityTokenV2',
     signers.technical,
   );
 
-  const smartCoinsOperators: Array<string> =
-    await getSmartCoinOperatorsAddresses();
-  const smartCoinV2Address = await upgrades.deployImplementation(
-    SmartCoinV3Factory,
+  const securityTokenOperators: Array<string> =
+    await getSecurityTokenOperatorsAddresses();
+  const securityTokenV2Address = await upgrades.deployImplementation(
+    SecurityTokenV2Factory,
     {
-      constructorArgs: smartCoinsOperators,
+      constructorArgs: securityTokenOperators,
       unsafeAllow: ['constructor'],
       kind: 'uups',
     },
   );
-  return smartCoinV2Address;
+  return securityTokenV2Address;
 }
 
 export async function deployTestContractMissuseAccessControlInternal(): Promise<MissuseAccessControlInternal> {
-  const smartCoinsOperators: Array<string> =
-    await getSmartCoinOperatorsAddresses();
+  const securityTokenOperators: Array<string> =
+    await getSecurityTokenOperatorsAddresses();
   const TestContractBase = await ethers.getContractFactory(
     'MissuseAccessControlInternal',
   );
 
   const testContract = (await upgrades.deployProxy(TestContractBase, [], {
     kind: 'uups',
-    constructorArgs: smartCoinsOperators,
+    constructorArgs: securityTokenOperators,
     unsafeAllow: ['constructor'],
   })) as MissuseAccessControlInternal;
   return testContract;

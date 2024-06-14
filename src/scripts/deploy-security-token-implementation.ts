@@ -1,9 +1,9 @@
 import { ethers, upgrades } from 'hardhat';
 import * as dotenv from 'dotenv';
-import { SmartCoin } from '../../dist/types';
+import { SecurityToken } from '../../dist/types';
 dotenv.config();
 
-const REQUIRED_ENVS = ['REGISTRAR', 'OPERATIONS', 'TECHNICAL'];
+const REQUIRED_ENVS = ['REGISTRAR', 'TECHNICAL'];
 
 async function main() {
   REQUIRED_ENVS.forEach((envVarName) => {
@@ -13,23 +13,22 @@ async function main() {
     }
   });
   const registrarAddress = process.env.REGISTRAR;
-  const operationsAddress = process.env.OPERATIONS;
   const technicalAddress = process.env.TECHNICAL;
 
-  const SmartCoin = await ethers.getContractFactory('SmartCoin');
+  const SmartCoin = await ethers.getContractFactory('SecurityToken');
 
-  console.log(`Deploying SmartCoin implementation with registrar[${registrarAddress}] operations[${operationsAddress}] technical[${technicalAddress}]`)
+  console.log(`Deploying SecurityToken implementation with registrar[${registrarAddress}] technical[${technicalAddress}]`)
 
-  const implementationAddress: SmartCoin = await upgrades.deployImplementation(
-    SmartCoin,
+  const implementationAddress: SecurityToken = await upgrades.deployImplementation(
+    SecurityToken,
     {
       kind: 'uups',
-      constructorArgs: [registrarAddress, operationsAddress, technicalAddress],
+      constructorArgs: [registrarAddress, technicalAddress],
       unsafeAllow: ['constructor'],
     },
   );
 
-  console.log(`SmartCoin implementation address: ${implementationAddress}`);
+  console.log(`SecurityToken implementation address: ${implementationAddress}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

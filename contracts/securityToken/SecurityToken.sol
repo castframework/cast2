@@ -57,7 +57,7 @@ contract SecurityToken is
     /// @custom:storage-location erc7201:sgforge.storage.SecurityToken
     struct SecurityTokenStorage {
         mapping(uint256 id => mapping(address account => uint256)) _engagedAmount;
-        mapping(uint256 id => bool) _minted;
+        mapping(uint256 id => bool) _minted; 
     }
 
     // keccak256(abi.encode(uint256(keccak256("sgforge.storage.SecurityToken")) - 1)) & ~bytes32(uint256(0xff))
@@ -135,6 +135,7 @@ contract SecurityToken is
         __ERC1155_init(_baseUri);
         __ERC1155URIStorage_init();
         _setBaseURI(_baseUri);
+        __UUPSUpgradeable_init();
     }
 
     function setURI(uint256 tokenId, string memory tokenURI) external virtual onlyRegistrar {

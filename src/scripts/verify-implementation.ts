@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 import { task } from "hardhat/config";
 
-const REQUIRED_ENVS = ['REGISTRAR', 'OPERATIONS', 'TECHNICAL'];
+const REQUIRED_ENVS = ['REGISTRAR', 'TECHNICAL'];
 
 
 task("verify-implem", "Verify the implementation")
@@ -16,13 +16,12 @@ task("verify-implem", "Verify the implementation")
       }
     });
     const registrarAddress = process.env.REGISTRAR;
-    const operationsAddress = process.env.OPERATIONS;
     const technicalAddress = process.env.TECHNICAL;
     
     await run(`verify:verify`, {
       address: _args.address,
-      contract: "contracts/smartCoin/SmartCoin.sol:SmartCoin",
-      constructorArguments: [registrarAddress, operationsAddress, technicalAddress],
+      contract: "contracts/securityToken/SecurityToken.sol:SecurityToken",
+      constructorArguments: [registrarAddress, technicalAddress],
     });
     return  _args.address
   });

@@ -1,325 +1,249 @@
-import { SmartCoin } from '../../../dist/types';
+import { SecurityToken } from '../../../dist/types';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import {
-  deploySmartCoinFixture,
-  deploySmartCoinV3Fixture,
-  getSmartCoinOperatorsAddresses,
+  deploySecurityTokenFixture,
+  deploySecurityTokenV2Fixture,
+  getSecurityTokenOperatorsAddresses,
 } from '../utils/builders';
 import { getOperatorSigners } from '../utils/signers';
 import { ethers } from 'hardhat';
 import { Signer } from 'ethers';
 import { EncodedVersionFunction } from '../utils/encodeCall';
-import { TOKEN_NAME, TOKEN_SYMBOL, ZERO_ADDRESS } from '../utils/contants';
+import { BASE_URI, ZERO_ADDRESS } from '../utils/constants';
 
-context('SmartCoin: Proxy', () => {
-  let smartcoinProxy: SmartCoin;
+context('SecurityToken: Proxy', () => {
+  let securityTokenProxy: SecurityToken;
   let signers: {
     registrar: Signer;
     investor1: Signer;
-    operations: Signer;
     technical: Signer;
   };
 
   let registrarAddress: string;
-  let operationsAddress: string;
   let technicalAddress: string;
 
   context('Proxy Implementation upgrade', async function () {
     beforeEach(async () => {
-      smartcoinProxy = await loadFixture(deploySmartCoinFixture);
+      securityTokenProxy = await loadFixture(deploySecurityTokenFixture);
 
       signers = await getOperatorSigners();
 
       registrarAddress = await signers.registrar.getAddress();
-      operationsAddress = await signers.operations.getAddress();
       technicalAddress = await signers.technical.getAddress();
     });
 
     it('should not be able to call initialize after initialization', async () => {
-      const transaction = smartcoinProxy.initialize(TOKEN_NAME, TOKEN_SYMBOL);
-      await expect(transaction).to.be.revertedWith(
-        'Initializable: contract is already initialized',
+      const transaction = securityTokenProxy.initialize(BASE_URI);
+      await expect(transaction).to.be.revertedWithCustomError(
+        securityTokenProxy,
+        'InvalidInitialization',
       );
     });
     context('Check operators consistency', () => {
-      it('should not deploy with zero address operations', async () => {
-        const rslt = smartcoinProxy
-          .connect(signers.registrar)
-          .nameNewOperators(registrarAddress, ZERO_ADDRESS, technicalAddress);
-        expect(rslt).to.be.revertedWithCustomError(
-          smartcoinProxy,
-          'ZeroAddressCheck',
-        );
-      });
       it('should not deploy with zero address registrar', async () => {
-        const rslt = smartcoinProxy
+        const rslt = securityTokenProxy
           .connect(signers.registrar)
-          .nameNewOperators(ZERO_ADDRESS, operationsAddress, technicalAddress);
+          .nameNewOperators(ZERO_ADDRESS, technicalAddress);
         expect(rslt).to.be.revertedWithCustomError(
-          smartcoinProxy,
+          securityTokenProxy,
           'ZeroAddressCheck',
         );
       });
       it('should not deploy with zero address technical', async () => {
-        const rslt = smartcoinProxy
+        const rslt = securityTokenProxy
           .connect(signers.registrar)
-          .nameNewOperators(technicalAddress, operationsAddress, ZERO_ADDRESS);
+          .nameNewOperators(technicalAddress, ZERO_ADDRESS);
         expect(rslt).to.be.revertedWithCustomError(
-          smartcoinProxy,
+          securityTokenProxy,
           'ZeroAddressCheck',
         );
       });
-      it('should not deploy when operations and registrar have same address', async () => {
-        const rslt = smartcoinProxy
-          .connect(signers.registrar)
-          .nameNewOperators(
-            registrarAddress,
-            registrarAddress,
-            technicalAddress,
-          );
-        expect(rslt).to.be.revertedWithCustomError(
-          smartcoinProxy,
-          'InconsistentOperators',
-        );
-      });
-      it('should not deploy when operations and technical have same address', async () => {
-        const rslt = smartcoinProxy
-          .connect(signers.registrar)
-          .nameNewOperators(
-            registrarAddress,
-            technicalAddress,
-            technicalAddress,
-          );
-        expect(rslt).to.be.revertedWithCustomError(
-          smartcoinProxy,
-          'InconsistentOperators',
-        );
-      });
       it('should not deploy when registrar and technical have same address', async () => {
-        const rslt = smartcoinProxy
+        const rslt = securityTokenProxy
           .connect(signers.registrar)
           .nameNewOperators(
             technicalAddress,
-            operationsAddress,
             technicalAddress,
           );
         expect(rslt).to.be.revertedWithCustomError(
-          smartcoinProxy,
+          securityTokenProxy,
           'InconsistentOperators',
         );
       });
     });
     it('should be able to be upgraded by the technical', async () => {
-      expect(await smartcoinProxy.version()).to.be.equals('V2');
+      expect(await securityTokenProxy.version()).to.be.equals('V1');
 
-      await smartcoinProxy
+      await securityTokenProxy
         .connect(signers.registrar)
         .nameNewOperators(
           registrarAddress,
-          operationsAddress,
           technicalAddress,
         );
-      smartcoinProxy.connect(signers.registrar).acceptRegistrarRole();
-      smartcoinProxy.connect(signers.operations).acceptOperationsRole();
-      smartcoinProxy.connect(signers.technical).acceptTechnicalRole();
+      securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
+      securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
 
-      const newSmartCoinV3Address = await loadFixture(deploySmartCoinV3Fixture);
+      const newSecurityTokenV2Address = await loadFixture(deploySecurityTokenV2Fixture);
 
-      await smartcoinProxy
+     await securityTokenProxy
         .connect(signers.registrar)
-        .authorizeImplementation(newSmartCoinV3Address);
-      await smartcoinProxy
+        .authorizeImplementation(newSecurityTokenV2Address);
+      await securityTokenProxy
         .connect(signers.technical)
-        .upgradeTo(newSmartCoinV3Address);
+        .upgradeToAndCall(newSecurityTokenV2Address, '0x');
 
-      expect(await smartcoinProxy.version()).to.be.equals('V3');
+      expect(await securityTokenProxy.version()).to.be.equals('V2');
     });
     context('Check new implementation authorization', async function () {
-      let newSmartCoinV3Address: string;
+      let newSecurityTokenV2Address: string;
       beforeEach(async () => {
-        newSmartCoinV3Address = await loadFixture(deploySmartCoinV3Fixture);
-        await smartcoinProxy
+        newSecurityTokenV2Address = await loadFixture(deploySecurityTokenV2Fixture);
+        await securityTokenProxy
           .connect(signers.registrar)
           .nameNewOperators(
             registrarAddress,
-            operationsAddress,
             technicalAddress,
           );
-        smartcoinProxy.connect(signers.operations).acceptOperationsRole();
-        smartcoinProxy.connect(signers.registrar).acceptRegistrarRole();
-        smartcoinProxy.connect(signers.technical).acceptTechnicalRole();
+        securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
+        securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
       });
       it('should emit an event implementation authorized', async function () {
-        const authorizedImplemTransaction = await smartcoinProxy
+        const authorizedImplemTransaction = await securityTokenProxy
           .connect(signers.registrar)
-          .authorizeImplementation(newSmartCoinV3Address);
+          .authorizeImplementation(newSecurityTokenV2Address);
         await expect(authorizedImplemTransaction)
-          .to.emit(smartcoinProxy, 'ImplementationAuthorized')
-          .withArgs(newSmartCoinV3Address);
+          .to.emit(securityTokenProxy, 'ImplementationAuthorized')
+          .withArgs(newSecurityTokenV2Address);
       });
-      it('should fail upgradeTo smartcoin with unauthorized new Implementation', async function () {
-        const upgradeSmartContract = smartcoinProxy
+      it('should fail upgradeTo securityToken with unauthorized new Implementation', async function () {
+        const upgradeSmartContract = securityTokenProxy
           .connect(signers.technical)
-          .upgradeTo(newSmartCoinV3Address);
+          .upgradeToAndCall(newSecurityTokenV2Address, '0x');
         await expect(upgradeSmartContract)
           .to.be.revertedWithCustomError(
-            smartcoinProxy,
+            securityTokenProxy,
             `UnauthorizedImplementation`,
           )
-          .withArgs(newSmartCoinV3Address);
+          .withArgs(newSecurityTokenV2Address);
       });
-      it('should fail upgradeToAndCall smartcoin with unauthorized new Implementation', async function () {
-        const upgradeSmartContract = smartcoinProxy
+      it('should fail upgradeToAndCall securityToken with unauthorized new Implementation', async function () {
+        const upgradeSmartContract = securityTokenProxy
           .connect(signers.technical)
-          .upgradeToAndCall(newSmartCoinV3Address, EncodedVersionFunction);
+          .upgradeToAndCall(newSecurityTokenV2Address, EncodedVersionFunction);
         await expect(upgradeSmartContract)
           .to.be.revertedWithCustomError(
-            smartcoinProxy,
+            securityTokenProxy,
             `UnauthorizedImplementation`,
           )
-          .withArgs(newSmartCoinV3Address);
+          .withArgs(newSecurityTokenV2Address);
       });
-      it('should  upgradeTo smartcoin with authorized new Implementation', async function () {
-        await smartcoinProxy
+      it('should upgradeTo securityToken with authorized new Implementation', async function () {
+        await securityTokenProxy
           .connect(signers.registrar)
-          .authorizeImplementation(newSmartCoinV3Address);
-        await smartcoinProxy
+          .authorizeImplementation(newSecurityTokenV2Address);
+        await securityTokenProxy
           .connect(signers.technical)
-          .upgradeTo(newSmartCoinV3Address);
-        expect(await smartcoinProxy.version()).to.be.equals('V3');
+          .upgradeToAndCall(newSecurityTokenV2Address, '0x');
+        expect(await securityTokenProxy.version()).to.be.equals('V2');
       });
-      it('should fail the second upgradeTo for the same implementation', async function () {
-        await smartcoinProxy
+      it('should fail the second upgradeToAndCall for the same implementation', async function () {
+        await securityTokenProxy
           .connect(signers.registrar)
-          .authorizeImplementation(newSmartCoinV3Address);
-        await smartcoinProxy
+          .authorizeImplementation(newSecurityTokenV2Address);
+        await securityTokenProxy
           .connect(signers.technical)
-          .upgradeTo(newSmartCoinV3Address);
+          .upgradeToAndCall(newSecurityTokenV2Address, '0x');
 
-        const upgradeSmartContract = smartcoinProxy
+        const upgradeSmartContract = securityTokenProxy
           .connect(signers.technical)
-          .upgradeTo(newSmartCoinV3Address);
+          .upgradeToAndCall(newSecurityTokenV2Address, '0x');
         await expect(upgradeSmartContract)
           .to.be.revertedWithCustomError(
-            smartcoinProxy,
+            securityTokenProxy,
             `UnauthorizedImplementation`,
           )
-          .withArgs(newSmartCoinV3Address);
-      });
-      it('should  upgradeToAndCall smartcoin with authorized new Implementation', async function () {
-        await smartcoinProxy
-          .connect(signers.registrar)
-          .authorizeImplementation(newSmartCoinV3Address);
-        await smartcoinProxy
-          .connect(signers.technical)
-          .upgradeToAndCall(newSmartCoinV3Address, EncodedVersionFunction);
-        expect(await smartcoinProxy.version()).to.be.equals('V3');
+          .withArgs(newSecurityTokenV2Address);
       });
     });
-    context('Check new smartcoin operators role acceptence', async function () {
-      let newSmartCoinV3Address: string;
+    context('Check new securityToken operators role acceptence', async function () {
+      let newSecurityTokenV2Address: string;
       beforeEach(async () => {
-        newSmartCoinV3Address = await loadFixture(deploySmartCoinV3Fixture);
-        await smartcoinProxy
+        newSecurityTokenV2Address = await loadFixture(deploySecurityTokenV2Fixture);
+        await securityTokenProxy
           .connect(signers.registrar)
           .nameNewOperators(
             registrarAddress,
-            operationsAddress,
             technicalAddress,
           );
       });
       it('should fail with registrar did not accept his role', async function () {
-        await smartcoinProxy.connect(signers.operations).acceptOperationsRole();
-        await smartcoinProxy.connect(signers.technical).acceptTechnicalRole();
-        const authorizeImplementation = smartcoinProxy
+        await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
+        const authorizeImplementation = securityTokenProxy
           .connect(signers.registrar)
-          .authorizeImplementation(newSmartCoinV3Address);
+          .authorizeImplementation(newSecurityTokenV2Address);
         await expect(authorizeImplementation).to.be.revertedWithCustomError(
-          smartcoinProxy,
+          securityTokenProxy,
           `UnauthorizedRegistrar`,
         );
       });
       it('should fail with technical did not accept his role', async function () {
-        await smartcoinProxy.connect(signers.operations).acceptOperationsRole();
-        await smartcoinProxy.connect(signers.registrar).acceptRegistrarRole();
-        const authorizeImplementation = smartcoinProxy
+        await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
+        const authorizeImplementation = securityTokenProxy
           .connect(signers.registrar)
-          .authorizeImplementation(newSmartCoinV3Address);
+          .authorizeImplementation(newSecurityTokenV2Address);
         await expect(authorizeImplementation).to.be.revertedWithCustomError(
-          smartcoinProxy,
+          securityTokenProxy,
           `UnauthorizedTechnical`,
-        );
-      });
-      it('should fail with operations did not accept his role', async function () {
-        await smartcoinProxy.connect(signers.technical).acceptTechnicalRole();
-        await smartcoinProxy.connect(signers.registrar).acceptRegistrarRole();
-        const authorizeImplementation = smartcoinProxy
-          .connect(signers.registrar)
-          .authorizeImplementation(newSmartCoinV3Address);
-        await expect(authorizeImplementation).to.be.revertedWithCustomError(
-          smartcoinProxy,
-          `UnauthorizedOperations`,
         );
       });
     });
 
     it('should be able to be upgraded only by the technical', async () => {
-      await smartcoinProxy
+      await securityTokenProxy
         .connect(signers.registrar)
         .nameNewOperators(
           registrarAddress,
-          operationsAddress,
           technicalAddress,
         );
 
-      await smartcoinProxy.connect(signers.registrar).acceptRegistrarRole();
-      await smartcoinProxy.connect(signers.operations).acceptOperationsRole();
-      await smartcoinProxy.connect(signers.technical).acceptTechnicalRole();
+      await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
+      await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
 
-      const newSmartCoinAddress = await loadFixture(deploySmartCoinV3Fixture);
+      const newSecurityTokenAddress = await loadFixture(deploySecurityTokenV2Fixture);
 
-      await smartcoinProxy
+      await securityTokenProxy
         .connect(signers.registrar)
-        .authorizeImplementation(newSmartCoinAddress);
-      const upgradeSmartContract = smartcoinProxy
+        .authorizeImplementation(newSecurityTokenAddress);
+      const upgradeSmartContract = securityTokenProxy
         .connect(signers.investor1)
-        .upgradeTo(newSmartCoinAddress);
+        .upgradeToAndCall(newSecurityTokenAddress, '0x');
 
       await expect(upgradeSmartContract).to.be.revertedWithCustomError(
-        smartcoinProxy,
+        securityTokenProxy,
         `UnauthorizedTechnical`,
       );
     });
     context(
       'upgradeTo and UpdateToAndCall must be called only through delegatecall',
       async () => {
-        let smartCoin: SmartCoin;
-        let newSmartCoinAddress: string;
+        let securityToken: SecurityToken;
+        let newSecurityTokenAddress: string;
         beforeEach(async () => {
-          const smartCoinsOperators = await getSmartCoinOperatorsAddresses();
-          const SmartCoinFactory = await ethers.getContractFactory('SmartCoin');
-          smartCoin = (await SmartCoinFactory.deploy(
-            ...smartCoinsOperators,
-          )) as SmartCoin;
-          smartCoin.deployed();
+          const securityTokenOperators = await getSecurityTokenOperatorsAddresses();
+          const SecurityTokenFactory = await ethers.getContractFactory('SecurityToken');
+          securityToken = (await SecurityTokenFactory.deploy(...securityTokenOperators)) as SecurityToken;
+          // securityToken.deployed();
 
-          newSmartCoinAddress = await loadFixture(deploySmartCoinV3Fixture);
-        });
-        it('should be able to call upgraded upgradeTo only via delegatecall', async () => {
-          const upgrateTo = smartCoin
-            .connect(signers.technical)
-            .upgradeTo(newSmartCoinAddress);
-          await expect(upgrateTo).to.be.rejectedWith(
-            'Function must be called through delegatecall',
-          );
+          newSecurityTokenAddress = await loadFixture(deploySecurityTokenV2Fixture);
         });
         it('should be able to call upgraded upgradeToAndCall only via delegatecall', async () => {
-          const upgrateTo = smartCoin
+          const upgrateTo = securityToken
             .connect(signers.technical)
-            .upgradeToAndCall(newSmartCoinAddress, []);
-          await expect(upgrateTo).to.be.rejectedWith(
-            'Function must be called through delegatecall',
+            .upgradeToAndCall(newSecurityTokenAddress, '0x');
+          await expect(upgrateTo).to.be.revertedWithCustomError(
+            securityToken,
+            'UUPSUnauthorizedCallContext',
           );
         });
       },

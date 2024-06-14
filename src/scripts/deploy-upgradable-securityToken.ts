@@ -1,9 +1,9 @@
 import { ethers, upgrades } from 'hardhat';
 import * as dotenv from 'dotenv';
-import { SmartCoin } from '../../dist/types';
+import { SecurityToken } from '../../dist/types';
 dotenv.config();
 
-const REQUIRED_ENVS = ['REGISTRAR', 'OPERATIONS', 'TECHNICAL'];
+const REQUIRED_ENVS = ['REGISTRAR', 'TECHNICAL'];
 
 async function main() {
   REQUIRED_ENVS.forEach((envVarName) => {
@@ -13,29 +13,28 @@ async function main() {
     }
   });
   const registrarAddress = process.env.REGISTRAR;
-  const operationsAddress = process.env.OPERATIONS;
   const technicalAddress = process.env.TECHNICAL;
 
-  const SmartCoin = await ethers.getContractFactory('SmartCoin');
+  const SecurityToken = await ethers.getContractFactory('SecurityToken');
 
-  const smartCoinProxifiedInstance: SmartCoin = await upgrades.deployProxy(
-    SmartCoin,
-    ['EUR CoinVertible', 'EURCV'],
+  const securityTokenProxifiedInstance: SecurityToken = await upgrades.deployProxy(
+    SecurityToken,
+    ['https://www.sgforge.com/erc1155/metadata/{id}'],
     {
       kind: 'uups',
-      constructorArgs: [registrarAddress, operationsAddress, technicalAddress],
+      constructorArgs: [registrarAddress, technicalAddress],
       unsafeAllow: ['constructor'],
     },
   );
 
-  await smartCoinProxifiedInstance.deployed();
-  const smartCoinImplAddress: string =
+  await securityTokenProxifiedInstance.deployed();
+  const securityTokenImplAddress: string =
     await upgrades.erc1967.getImplementationAddress(
-      smartCoinProxifiedInstance.address,
+      securityTokenProxifiedInstance.address,
     );
-  console.log(`SmartCoin implementation address: ${smartCoinImplAddress}`);
+  console.log(`SecurityToken implementation address: ${securityTokenImplAddress}`);
   console.log(
-    `SmartCoin proxy deployed to ${smartCoinProxifiedInstance.address}`,
+    `SecurityToken proxy deployed to ${securityTokenProxifiedInstance.address}`,
   );
 }
 

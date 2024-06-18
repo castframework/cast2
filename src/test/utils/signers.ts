@@ -9,8 +9,7 @@ export const signerIndex = {
   investor1: 5,
   investor2: 6,
   investor3: 7,
-  operations: 8,
-  technical: 9,
+  technical: 8,
 };
 
 type OperatorSigners = {

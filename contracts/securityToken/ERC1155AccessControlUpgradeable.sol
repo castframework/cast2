@@ -15,10 +15,6 @@ abstract contract ERC1155AccessControlUpgradeable is
      */
     error UnauthorizedRegistrar();
     /**
-     * @dev Used when the registar operator's address is used as parameter where it's not allowed
-     */
-    error ForbiddenForRegistrar();
-    /**
      * @dev Used when `addr` address is not authorized to perform an action
      */
     error Unauthorized(address addr);
@@ -143,17 +139,7 @@ abstract contract ERC1155AccessControlUpgradeable is
         address _registrar,
         address _technical
     ) {
-        if (
-            _registrar == _technical
-        ) revert InconsistentOperators();
-        _;
-    }
-
-    /**
-     * @dev Throws if addr is registrar
-     */
-    modifier forbiddenForRegistrar(address _addr) {
-        if (_addr == registrar) revert ForbiddenForRegistrar();
+        if (_registrar == _technical) revert InconsistentOperators();
         _;
     }
 
@@ -176,10 +162,8 @@ abstract contract ERC1155AccessControlUpgradeable is
         IAccessControl _newImplementation
     ) {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        (
-            address _registar,
-            address _technical
-        ) = _newImplementation.getOperators();
+        (address _registar, address _technical) = _newImplementation
+            .getOperators();
         if (_registar != $.newRegistrar || !$.hasAcceptedRole[_registar])
             revert UnauthorizedRegistrar();
         if (_technical != $.newTechnical || !$.hasAcceptedRole[_technical])
@@ -256,6 +240,21 @@ abstract contract ERC1155AccessControlUpgradeable is
     }
 
     /**
+    * @dev Returns the token's settlement agent
+     */
+    function getSettlementAgent(uint256 _id) external view returns (address) {
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        return $.settlementAgentByTokenId[_id];
+    }
+     /**
+     * @dev Returns the token's registrar agent
+     */
+    function getRegistrarAgent(uint256 _id) external view returns (address) {
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        return $.registrarAgentByTokenId[_id];
+    }
+
+    /**
      * @dev Name the operators for the next implementation
      * and emits a corresponding `NamedNewOperators` event
      * The operators will have to accept their future roles before the update to the new implementation can take place
@@ -269,10 +268,7 @@ abstract contract ERC1155AccessControlUpgradeable is
         onlyRegistrar
         onlyNotZeroAddress(_registrar)
         onlyNotZeroAddress(_technical)
-        onlyWhenOperatorsHaveDifferentAddress(
-            _registrar,
-            _technical
-        )
+        onlyWhenOperatorsHaveDifferentAddress(_registrar, _technical)
     {
         _resetNewOperators();
         AccessControlStorage storage $ = _getAccessControlStorage();
@@ -340,12 +336,14 @@ abstract contract ERC1155AccessControlUpgradeable is
     function setRegistrarAgent(
         uint256 _id,
         address registrarAgent
-    )
-        public
-        onlyRegistrar
-        onlyNotZeroAddress(registrarAgent)
-        onlyWhenRegistrarAgentAlreadySet(_id)
-    {
+    ) external onlyWhenRegistrarAgentAlreadySet(_id) {
+        _setRegistrarAgent(_id, registrarAgent);
+    }
+
+    function _setRegistrarAgent(
+        uint256 _id,
+        address registrarAgent
+    ) internal onlyRegistrar onlyNotZeroAddress(registrarAgent) {
         AccessControlStorage storage $ = _getAccessControlStorage();
         $.registrarAgentByTokenId[_id] = registrarAgent;
     }
@@ -353,12 +351,14 @@ abstract contract ERC1155AccessControlUpgradeable is
     function setSettlementAgent(
         uint256 _id,
         address settlementAgent
-    )
-        public
-        onlyRegistrar
-        onlyNotZeroAddress(settlementAgent)
-        onlyWhenSettlementAgentAlreadySet(_id)
-    {
+    ) external onlyWhenSettlementAgentAlreadySet(_id) {
+        _setSettlementAgent(_id, settlementAgent);
+    }
+
+    function _setSettlementAgent(
+        uint256 _id,
+        address settlementAgent
+    ) internal onlyRegistrar onlyNotZeroAddress(settlementAgent) {
         AccessControlStorage storage $ = _getAccessControlStorage();
         $.settlementAgentByTokenId[_id] = settlementAgent;
     }

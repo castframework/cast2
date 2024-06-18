@@ -170,8 +170,8 @@ contract SecurityToken is
         if (data.length != 0) {
             require(!$._minted[_id], TokenAlreadyMinted(_id));
             MintData memory mintData = abi.decode(data, (MintData));            
-            setRegistrarAgent(_id, mintData.registrarAgent);
-            setSettlementAgent(_id, mintData.settlementAgent);
+            _setRegistrarAgent(_id, mintData.registrarAgent);
+            _setSettlementAgent(_id, mintData.settlementAgent);
             $._minted[_id] = true;             
         } else {
             require($._minted[_id], TokenNotAlreadyMinted(_id));            

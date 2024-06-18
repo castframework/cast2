@@ -1,4 +1,4 @@
-import { MissuseAccessControlInternal, SecurityToken } from '../../../dist/types';
+import { SecurityToken, MissuseAccessControlInternal } from '../../../dist/types';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import {
@@ -9,6 +9,8 @@ import {
 import { getOperatorSigners } from '../utils/signers';
 import { ZERO_ADDRESS } from '../utils/constants';
 import { Signer } from 'ethers';
+import { ethers } from 'hardhat';
+import { MintData } from '../utils/types';
 
 
 
@@ -124,6 +126,85 @@ context('SecurityToken', () => {
           .to.emit(securityTokenProxy, 'AcceptedTechnicalRole')
           .withArgs(technicalAddress);
       });
+    });
+  });
+  context('Should be able to set token agents', async () => {
+    let tokenId = 10;
+    let amount = 100;
+    let receiverAddress;
+    let registrarAddress;
+    let settlementAgentAddress;
+    let newRegistrarAddress;
+    beforeEach(async () => {
+      signers = await getOperatorSigners();
+      securityTokenProxy = await loadFixture(deploySecurityTokenFixture);
+
+      receiverAddress = await signers.investor1.getAddress()
+      registrarAddress = await signers.registrar.getAddress()
+      settlementAgentAddress = await signers.settler.getAddress();
+      newRegistrarAddress = await signers.investor3.getAddress();
+      const minData: MintData = { registrarAgent: registrarAddress, settlementAgent: settlementAgentAddress, metadataUri: "0x" }
+      const AbiCoder = new ethers.AbiCoder();
+      await securityTokenProxy
+        .connect(signers.registrar)
+        .mint(
+          receiverAddress,
+          tokenId,
+          amount,
+          AbiCoder.encode(["tuple(address registrarAgent, string settlementAgent, string metadataUri) mintData"], [minData])
+        );
+    });
+    it('should be able to set token\'s settlement agent', async () => {
+      await securityTokenProxy.connect(signers.registrar).setSettlementAgent(tokenId, receiverAddress);
+      await expect(await securityTokenProxy.getSettlementAgent(tokenId)).to.be.equals(receiverAddress);
+    });
+    it('should be able to set token\'s registrar agent', async () => {
+      await securityTokenProxy.connect(signers.registrar).setRegistrarAgent(tokenId, newRegistrarAddress);
+      await expect(await securityTokenProxy.getRegistrarAgent(tokenId)).to.be.equals(newRegistrarAddress);
+    });
+    it('only registrar could set token\'s settlement agent', async () => {
+      const setSettlementAgent = securityTokenProxy.connect(signers.technical).setSettlementAgent(tokenId, receiverAddress);
+      await expect(setSettlementAgent).to.be.revertedWithCustomError(securityTokenProxy, "UnauthorizedRegistrar");
+    });
+    it('only registrar could set token\'s registrar agent', async () => {
+      const setRegistrarAgent = securityTokenProxy.connect(signers.technical).setRegistrarAgent(tokenId, newRegistrarAddress);
+      await expect(setRegistrarAgent).to.be.revertedWithCustomError(securityTokenProxy, "UnauthorizedRegistrar");
+    });
+    it('should not be able to set token\'s settlement agent to zero address', async () => {
+      const setSettlementAgent = securityTokenProxy.connect(signers.registrar).setSettlementAgent(tokenId, ZERO_ADDRESS);
+      await expect(setSettlementAgent).to.be.revertedWithCustomError(securityTokenProxy, "ZeroAddressCheck");
+    });
+    it('should not be able to set token\'s registrar agent to zero address', async () => {
+      const setRegistrarAgent = securityTokenProxy.connect(signers.registrar).setRegistrarAgent(tokenId, ZERO_ADDRESS);
+      await expect(setRegistrarAgent).to.be.revertedWithCustomError(securityTokenProxy, "ZeroAddressCheck");
+    });
+  });
+  context('Should not to be able to set token agents', async () => {
+    let tokenId = 10;
+    let receiverAddress;
+    let registrarAddress;
+    let settlementAgentAddress;
+    let newRegistrarAddress;
+    beforeEach(async () => {
+      signers = await getOperatorSigners();
+      securityTokenProxy = await loadFixture(deploySecurityTokenFixture);
+
+      receiverAddress = await signers.investor1.getAddress()
+      registrarAddress = await signers.registrar.getAddress()
+      settlementAgentAddress = await signers.settler.getAddress();
+      newRegistrarAddress = await signers.investor3.getAddress();
+    });
+    it('should not be able to set token\'s settlement agent', async () => {
+      await expect(securityTokenProxy.connect(signers.registrar).setSettlementAgent(tokenId, receiverAddress)).to.be.revertedWithCustomError(
+        securityTokenProxy,
+        `NoSettlementAgentCurrentlySet`,
+      );
+    });
+    it('should not be able to set token\'s registrar agent', async () => {
+      await expect(securityTokenProxy.connect(signers.registrar).setRegistrarAgent(tokenId, newRegistrarAddress)).to.be.revertedWithCustomError(
+        securityTokenProxy,
+        `NoRegistrarAgentCurrentlySet`,
+      );
     });
   });
   context(

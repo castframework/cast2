@@ -116,6 +116,11 @@ module.exports = {
       configFile: "mocha-multi-reporters.json"
     }
   },
+  typechain: {
+    outDir: 'dist/types',
+    target: 'ethers-v6',
+    alwaysGenerateOverloads: false, // should overloads with full signatures like deposit(uint256) be generated always, even if there are no overloads?
+  },
   paths: {
     sources: './contracts',
     tests: './src/test',

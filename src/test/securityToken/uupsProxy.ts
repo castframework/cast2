@@ -26,7 +26,6 @@ context('SecurityToken: Proxy', () => {
   context('Proxy Implementation upgrade', async function () {
     beforeEach(async () => {
       securityTokenProxy = await loadFixture(deploySecurityTokenFixture);
-
       signers = await getOperatorSigners();
 
       registrarAddress = await signers.registrar.getAddress();
@@ -105,8 +104,8 @@ context('SecurityToken: Proxy', () => {
             registrarAddress,
             technicalAddress,
           );
-        securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
-        securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
+        await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
+        await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
       });
       it('should emit an event implementation authorized', async function () {
         const authorizedImplemTransaction = await securityTokenProxy

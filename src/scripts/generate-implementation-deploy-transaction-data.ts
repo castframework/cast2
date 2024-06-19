@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
 import fs from "fs";
 import path from "path";
-import config from "../../new-security-token-implementation-config.json";
+import config from "../../config/new-security-token-implementation-config.json";
 
 async function main() {
     console.log("Starting...");

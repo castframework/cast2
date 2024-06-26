@@ -1,7 +1,9 @@
 import { ethers, upgrades } from 'hardhat';
-import config from "../../config/upgrade-to-config.json"
+import { GetUpgradeToConfig } from './configuration/upgrade-to-config';
 
 async function main() {
+  const config = GetUpgradeToConfig();
+
   const registrarAddress = config.RegistrarAddress;
   const upgradeArtifact = config.ImplementationArtifactName; // Contract source name
   const proxyAddress = config.ProxyAddress;

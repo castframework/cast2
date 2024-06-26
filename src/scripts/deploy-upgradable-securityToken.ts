@@ -1,8 +1,10 @@
 import { ethers, upgrades } from 'hardhat';
 import { SecurityToken } from '../../dist/types';
-import config from "../../config/new-security-token-implementation-config.json"
+import { GetNewSecurityTokenImplementationConfig } from './configuration/new-security-token-implementation-config';
 
 async function main() {
+  const config = GetNewSecurityTokenImplementationConfig();
+
   const registrarAddress = config.NewOperatorsAddress.Registrar;
   const technicalAddress = config.NewOperatorsAddress.Technical;
 

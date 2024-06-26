@@ -1,13 +1,15 @@
 import { ethers } from 'hardhat';
 import fs from "fs";
 import path from "path";
-import config from "../../config/new-security-token-proxy-config.json";
 import ERC1967Proxy from '@openzeppelin/upgrades-core/artifacts/@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol/ERC1967Proxy.json';
+import { GetNewSecurityTokenProxyConfig } from './configuration/new-security-token-proxy-config';
 
 async function main() {
     console.log("Starting...");
 
-    const outputFile = path.join(config.OuputFolder, "proxy-deploy-data-field.json");
+    const config = GetNewSecurityTokenProxyConfig();
+
+    const outputFile = path.join(config.OutputFolder, "proxy-deploy-data-field.json");
 
     const implInitializerCall = await buildInitializerCall(config.Contracts.ImplementationArtifactName, config.Contracts.BaseUri);
 

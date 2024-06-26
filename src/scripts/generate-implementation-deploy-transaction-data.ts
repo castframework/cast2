@@ -1,12 +1,14 @@
 import { ethers } from 'hardhat';
 import fs from "fs";
 import path from "path";
-import config from "../../config/new-security-token-implementation-config.json";
+import { GetNewSecurityTokenImplementationConfig } from './configuration/new-security-token-implementation-config';
 
 async function main() {
     console.log("Starting...");
 
-    const outputFile = path.join(config.OuputFolder, "implementation-deploy-data-field.json");
+    const config = GetNewSecurityTokenImplementationConfig();
+
+    const outputFile = path.join(config.OutputFolder, "implementation-deploy-data-field.json");
 
     const newImplementationDeployData = await generateNewImplementationDeployTransaction( 
         {

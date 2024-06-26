@@ -1,10 +1,12 @@
 import { run } from "hardhat";
-import config from "../../config/new-security-token-implementation-config.json"
 import { task } from "hardhat/config";
+import { GetNewSecurityTokenImplementationConfig } from "./configuration/new-security-token-implementation-config";
 
 task("verify-implem", "Verify the implementation")
   .addParam("address", "The implementation's address")
   .setAction(async (_args, { ethers, run }) => {
+    const config = GetNewSecurityTokenImplementationConfig();
+
     const registrarAddress = config.NewOperatorsAddress.Registrar;
     const technicalAddress = config.NewOperatorsAddress.Technical;
     

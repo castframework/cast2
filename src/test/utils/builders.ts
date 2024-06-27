@@ -1,4 +1,7 @@
-import { MissuseAccessControlInternal, SecurityToken } from '../../../dist/types/';
+import {
+  MissuseAccessControlInternal,
+  SecurityToken,
+} from '../../../dist/types/';
 import { ethers, upgrades } from 'hardhat';
 import { getOperatorSigners } from './signers';
 import { BASE_URI } from './constants';

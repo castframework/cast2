@@ -5,7 +5,10 @@ pragma solidity 0.8.26;
 import "../securityToken/ERC1155AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract MissuseAccessControlInternal is ERC1155AccessControlUpgradeable, UUPSUpgradeable {
+contract MissuseAccessControlInternal is
+    ERC1155AccessControlUpgradeable,
+    UUPSUpgradeable
+{
     constructor(
         address registrar,
         address technical

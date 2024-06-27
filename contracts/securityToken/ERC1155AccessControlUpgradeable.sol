@@ -214,18 +214,6 @@ abstract contract ERC1155AccessControlUpgradeable is
         _;
     }
 
-    /**
-     * @dev Throws if called by any account other than the registrar agent.
-     */
-    modifier onlySettlementAgent(uint256 _id) {
-        AccessControlStorage storage $ = _getAccessControlStorage();
-        require(
-            msg.sender == $.settlementAgentByTokenId[_id],
-            UnauthorizedSettlementAgent(_id)
-        );
-        _;
-    }
-
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(address _registrar, address _technical) {
         registrar = _registrar;
@@ -240,16 +228,17 @@ abstract contract ERC1155AccessControlUpgradeable is
     }
 
     /**
-    * @dev Returns the token's settlement agent
+     * @dev Returns the token's settlement agent
      */
-    function getSettlementAgent(uint256 _id) external view returns (address) {
+    function getSettlementAgent(uint256 _id) public view returns (address) {
         AccessControlStorage storage $ = _getAccessControlStorage();
         return $.settlementAgentByTokenId[_id];
     }
-     /**
+
+    /**
      * @dev Returns the token's registrar agent
      */
-    function getRegistrarAgent(uint256 _id) external view returns (address) {
+    function getRegistrarAgent(uint256 _id) public view returns (address) {
         AccessControlStorage storage $ = _getAccessControlStorage();
         return $.registrarAgentByTokenId[_id];
     }
@@ -340,14 +329,6 @@ abstract contract ERC1155AccessControlUpgradeable is
         _setRegistrarAgent(_id, registrarAgent);
     }
 
-    function _setRegistrarAgent(
-        uint256 _id,
-        address registrarAgent
-    ) internal onlyRegistrar onlyNotZeroAddress(registrarAgent) {
-        AccessControlStorage storage $ = _getAccessControlStorage();
-        $.registrarAgentByTokenId[_id] = registrarAgent;
-    }
-
     function setSettlementAgent(
         uint256 _id,
         address settlementAgent
@@ -357,10 +338,17 @@ abstract contract ERC1155AccessControlUpgradeable is
 
     function _setSettlementAgent(
         uint256 _id,
-        address settlementAgent
-    ) internal onlyRegistrar onlyNotZeroAddress(settlementAgent) {
+        address _settlementAgent
+    ) internal onlyRegistrar onlyNotZeroAddress(_settlementAgent) {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        $.settlementAgentByTokenId[_id] = settlementAgent;
+        $.settlementAgentByTokenId[_id] = _settlementAgent;
+    }
+    function _setRegistrarAgent(
+        uint256 _id,
+        address registrarAgent
+    ) internal onlyRegistrar onlyNotZeroAddress(registrarAgent) {
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        $.registrarAgentByTokenId[_id] = registrarAgent;
     }
 
     function pause() external onlyRegistrar {

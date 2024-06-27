@@ -10,22 +10,25 @@ async function main() {
 
   const SecurityToken = await ethers.getContractFactory('SecurityToken');
 
-  const securityTokenProxifiedInstance: SecurityToken = await upgrades.deployProxy(
-    SecurityToken,
-    ['https://www.sgforge.com/erc1155/metadata/{id}'],
-    {
-      kind: 'uups',
-      constructorArgs: [registrarAddress, technicalAddress],
-      unsafeAllow: ['constructor'],
-    },
-  );
+  const securityTokenProxifiedInstance: SecurityToken =
+    await upgrades.deployProxy(
+      SecurityToken,
+      ['https://www.sgforge.com/erc1155/metadata/{id}'],
+      {
+        kind: 'uups',
+        constructorArgs: [registrarAddress, technicalAddress],
+        unsafeAllow: ['constructor'],
+      },
+    );
 
   await securityTokenProxifiedInstance.deployed();
   const securityTokenImplAddress: string =
     await upgrades.erc1967.getImplementationAddress(
       securityTokenProxifiedInstance.address,
     );
-  console.log(`SecurityToken implementation address: ${securityTokenImplAddress}`);
+  console.log(
+    `SecurityToken implementation address: ${securityTokenImplAddress}`,
+  );
   console.log(
     `SecurityToken proxy deployed to ${securityTokenProxifiedInstance.address}`,
   );

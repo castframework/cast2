@@ -4,7 +4,7 @@ module.exports = {
   istanbulReporter: ['text', 'json-summary', 'cobertura', 'lcov'],
   limits: {
     statements: 100,
-    branches: 99.43,
+    branches: 100,
     functions: 100,
     lines: 100
   },

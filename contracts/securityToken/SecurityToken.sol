@@ -4,7 +4,6 @@ pragma solidity 0.8.26;
 
 import "./ISecurityToken.sol";
 import "./ERC1155AccessControlUpgradeable.sol";
-import "../libraries/EncodingUtils.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol";
@@ -30,19 +29,26 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
  *      - only the technical operator can launch a (previously authorised) upgrade of the implementation contract (upgradeTo/upgradeToAndCall)
  */
 contract SecurityToken is
-   Initializable,
-   ERC1155AccessControlUpgradeable,
-   ERC1155SupplyUpgradeable,
-   ERC1155URIStorageUpgradeable,   
-   UUPSUpgradeable,
-   ISecurityToken
+    Initializable,
+    ERC1155AccessControlUpgradeable,
+    ERC1155SupplyUpgradeable,
+    ERC1155URIStorageUpgradeable,
+    UUPSUpgradeable,
+    ISecurityToken
 {
     string constant TRANFER_TYPE_DIRECT = "Direct";
     string constant TRANFER_TYPE_LOCK = "Lock";
-    string constant TRANFER_TYPE_UNKNOWN = "";
+
+    error DataTransferEmpty();
+    error TransactionAlreadyExists();
+    error InvalidTransferType();
+
+    error TransferRequestNotFound();
+    error InvalidTransferRequestStatus();
+
     /**
-    * @dev Used when "available" balance is insufficient
-    */
+     * @dev Used when "available" balance is insufficient
+     */
     error InsufficientBalance(uint256 id, uint256 current, uint256 required);
 
     /**
@@ -56,25 +62,36 @@ contract SecurityToken is
 
     /// @custom:storage-location erc7201:sgforge.storage.SecurityToken
     struct SecurityTokenStorage {
+        mapping(string transactionId => TransferRequest) transferRequests;
         mapping(uint256 id => mapping(address account => uint256)) _engagedAmount;
-        mapping(uint256 id => bool) _minted; 
+        mapping(uint256 id => bool) _minted;
     }
 
     // keccak256(abi.encode(uint256(keccak256("sgforge.storage.SecurityToken")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant SecurityTokenStorageLocation = 0x5ca544375baada28ac0172fd60c2d13c5c7015fc0767de9d1a40a3419301b900;
+    bytes32 private constant SecurityTokenStorageLocation =
+        0x5ca544375baada28ac0172fd60c2d13c5c7015fc0767de9d1a40a3419301b900;
 
-    function _getSecurityTokenStorage() private pure returns (SecurityTokenStorage storage $) {
+    function _getSecurityTokenStorage()
+        private
+        pure
+        returns (SecurityTokenStorage storage $)
+    {
         assembly {
             $.slot := SecurityTokenStorageLocation
         }
     }
+
     /**
      * @dev Performs balance checks based on the "available" balance instead of total balance
      * The "available" balance excludes tokens currently engaged in a transfer request,
      * which is a two-step transfer back to the registrar operator or the operations operator
      * (initiated with the transfer() method)
      */
-    modifier onlyWhenBalanceAvailable(address _from, uint256 _id, uint256 _value) {
+    modifier onlyWhenBalanceAvailable(
+        address _from,
+        uint256 _id,
+        uint256 _value
+    ) {
         uint256 availableBalance = _availableBalance(_from, _id);
         if (_value > availableBalance)
             revert InsufficientBalance({
@@ -82,6 +99,18 @@ contract SecurityToken is
                 current: availableBalance,
                 required: _value
             });
+        _;
+    }
+    /**
+     * @dev Throws if called by any account other than the settlement agent.
+     */
+    modifier onlySettlementAgent(string calldata _transactionId) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        uint tokenId = $.transferRequests[_transactionId].id;
+        require(
+            msg.sender == getSettlementAgent(tokenId),
+            UnauthorizedSettlementAgent(tokenId)
+        );
         _;
     }
 
@@ -92,10 +121,7 @@ contract SecurityToken is
     )
         onlyNotZeroAddress(_registrar)
         onlyNotZeroAddress(_technical)
-        onlyWhenOperatorsHaveDifferentAddress(
-            _registrar,
-            _technical
-        )
+        onlyWhenOperatorsHaveDifferentAddress(_registrar, _technical)
         ERC1155AccessControlUpgradeable(_registrar, _technical)
     {
         // https://docs.openzeppelin.com/upgrades-plugins/1.x/writing-upgradeable#potentially-unsafe-operations
@@ -114,7 +140,6 @@ contract SecurityToken is
         onlyProxy
         consumeAuthorizeImplementation(_newImplementation)
     {
-
         super.upgradeToAndCall(_newImplementation, data);
         _resetNewOperators();
     }
@@ -129,16 +154,17 @@ contract SecurityToken is
     /**
      * @dev UUPS initializer that initializes the token's name and symbol
      */
-    function initialize(
-        string memory _baseUri
-    ) public initializer {
+    function initialize(string memory _baseUri) public initializer {
         __ERC1155_init(_baseUri);
         __ERC1155URIStorage_init();
         _setBaseURI(_baseUri);
         __UUPSUpgradeable_init();
     }
 
-    function setURI(uint256 tokenId, string memory tokenURI) external virtual onlyRegistrar {
+    function setURI(
+        uint256 tokenId,
+        string memory tokenURI
+    ) external virtual onlyRegistrar {
         super._setURI(tokenId, tokenURI);
     }
 
@@ -151,7 +177,11 @@ contract SecurityToken is
      * NB: only the registrar operator is allowed to burn their tokens
      */
     // todo : either this or burn(_id, _amount) to only burn on registrar's account
-    function burn(address _account, uint256 _id, uint256 _amount) external onlyRegistrar onlyWhenBalanceAvailable(_account, _id, _amount) {
+    function burn(
+        address _account,
+        uint256 _id,
+        uint256 _amount
+    ) external onlyRegistrar onlyWhenBalanceAvailable(_account, _id, _amount) {
         super._burn(_account, _id, _amount);
     }
 
@@ -169,34 +199,169 @@ contract SecurityToken is
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         if (data.length != 0) {
             require(!$._minted[_id], TokenAlreadyMinted(_id));
-            MintData memory mintData = abi.decode(data, (MintData));            
+            MintData memory mintData = abi.decode(data, (MintData));
             _setRegistrarAgent(_id, mintData.registrarAgent);
             _setSettlementAgent(_id, mintData.settlementAgent);
-            $._minted[_id] = true;             
+            $._minted[_id] = true;
         } else {
-            require($._minted[_id], TokenNotAlreadyMinted(_id));            
+            require($._minted[_id], TokenNotAlreadyMinted(_id));
         }
         super._mint(_to, _id, _amount, data);
         return true;
     }
 
-    function _update(address from, address to, uint256[] memory ids, uint256[] memory values)
+    function _update(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    )
         internal
-        override(ERC1155Upgradeable, ERC1155SupplyUpgradeable, ERC1155AccessControlUpgradeable)
+        override(
+            ERC1155Upgradeable,
+            ERC1155SupplyUpgradeable,
+            ERC1155AccessControlUpgradeable
+        )
     {
-        super._update(from, to, ids, values);//TODO check which parent class this method call
+        super._update(from, to, ids, values); //TODO check which parent class this method call
     }
 
-    function uri(uint256 _id) public view override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable) returns (string memory) {
-        return super.uri(_id);
+    function uri(
+        uint256 _id
+    )
+        public
+        view
+        override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable)
+        returns (string memory)
+    {
+        return ERC1155URIStorageUpgradeable.uri(_id);
     }
 
-   /**
+    /**
      * @dev See {IERC1155-safeTransferFrom}.
      */
-    function safeTransferFrom(address from, address to, uint256 id, uint256 value, bytes memory data) onlyRegistrarAgent(id) public override {
+    function safeTransferFrom(
+        address _from,
+        address _to,
+        uint256 _id,
+        uint256 _value,
+        bytes memory _data
+    )
+        public
+        override
+        onlyRegistrarAgent(_id)
+        onlyWhenBalanceAvailable(_from, _id, _value)
+    {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        require(_data.length > 0, DataTransferEmpty());
+        TransferData memory transferData = abi.decode(_data, (TransferData));
+        if (_isLockTransfer(transferData.kind)) {
+            require(
+                $.transferRequests[transferData.transactionId].status ==
+                    TransferStatus.Undefined,
+                TransactionAlreadyExists()
+            );
+            $._engagedAmount[_id][_from] += _value;
+            $.transferRequests[transferData.transactionId] = TransferRequest(
+                _from,
+                _to,
+                _id,
+                _value,
+                _data,
+                TransferStatus.Created
+            );
+            emit TransferRequested(
+                transferData.transactionId,
+                _from,
+                _to,
+                _id,
+                _value,
+                _data
+            );
+        } else if (_isDirectTransfer(transferData.kind)) {
+            super._safeTransferFrom(_from, _to, _id, _value, _data);
+        } else {
+            revert InvalidTransferType();
+        }
+    }
 
-        super._safeTransferFrom(from, to, id ,value, data);
+    function releaseTransaction(
+        string calldata _transactionId
+    ) external onlySettlementAgent(_transactionId) returns (bool) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        TransferRequest memory transferRequest = $.transferRequests[
+            _transactionId
+        ];
+        //TODO: a transaction with status Undefined could not baypass onlySettlementAgent modifier
+        // require(
+        //     transferRequest.status != TransferStatus.Undefined,
+        //     TransferRequestNotFound()
+        // );
+        require(
+            transferRequest.status == TransferStatus.Created,
+            InvalidTransferRequestStatus()
+        );
+
+        $.transferRequests[_transactionId].status = TransferStatus.Validated;
+        $._engagedAmount[transferRequest.id][
+            transferRequest.from
+        ] -= transferRequest.value;
+        super._safeTransferFrom(
+            transferRequest.from,
+            transferRequest.to,
+            transferRequest.id,
+            transferRequest.value,
+            transferRequest.data
+        );
+
+        emit TransferValidated(_transactionId);
+        return true;
+    }
+
+    function cancelTransaction(
+        string calldata _transactionId
+    ) external onlySettlementAgent(_transactionId) returns (bool) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        TransferRequest memory transferRequest = $.transferRequests[
+            _transactionId
+        ];
+
+        //TODO: a transaction with status Undefined could not baypass onlySettlementAgent modifier
+        // require(
+        //     transferRequest.status != TransferStatus.Undefined,
+        //     TransferRequestNotFound()
+        // );
+        require(
+            transferRequest.status == TransferStatus.Created,
+            InvalidTransferRequestStatus()
+        );
+
+        $.transferRequests[_transactionId].status = TransferStatus.Rejected;
+        $._engagedAmount[transferRequest.id][
+            transferRequest.from
+        ] -= transferRequest.value;
+        emit TransferRejected(_transactionId);
+        return true;
+    }
+
+    function _isDirectTransfer(string memory kind) private pure returns (bool) {
+        return _compareStr(kind, TRANFER_TYPE_DIRECT);
+    }
+
+    function _isLockTransfer(string memory kind) private pure returns (bool) {
+        return _compareStr(kind, TRANFER_TYPE_LOCK);
+    }
+
+    function _compareStr(
+        string memory str1,
+        string memory str2
+    ) private pure returns (bool) {
+        if (bytes(str1).length != bytes(str2).length) {
+            return false;
+        }
+        return
+            keccak256(abi.encodePacked(str1)) ==
+            keccak256(abi.encodePacked(str2));
     }
 
     /**
@@ -205,7 +370,8 @@ contract SecurityToken is
      * (i.e. a transfer back to the registrar operator or the operations operator)
      */
     function balanceOf(
-        address _addr, uint256 _id
+        address _addr,
+        uint256 _id
     ) public view override(ERC1155Upgradeable) returns (uint256) {
         return _availableBalance(_addr, _id);
     }
@@ -213,7 +379,10 @@ contract SecurityToken is
     /**
      * @dev Returns current amount engaged in transfer requests for `addr` account and `id` token
      */
-    function engagedAmount(address _addr, uint256 _id) public view returns (uint256) {
+    function engagedAmount(
+        address _addr,
+        uint256 _id
+    ) public view returns (uint256) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         return $._engagedAmount[_id][_addr];
     }
@@ -226,7 +395,10 @@ contract SecurityToken is
     /**
      * @dev Internal method that computes the available(i.e. not engaged) balance
      */
-    function _availableBalance(address _addr, uint256 _id) internal view returns (uint256) {
+    function _availableBalance(
+        address _addr,
+        uint256 _id
+    ) internal view returns (uint256) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         unchecked {
             return super.balanceOf(_addr, _id) - $._engagedAmount[_id][_addr]; // No overflow since balance >= engagedAmount

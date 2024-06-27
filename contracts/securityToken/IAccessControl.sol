@@ -6,10 +6,7 @@ interface IAccessControl {
     /**
      * @dev Emitted when new operators are named by the registrar operator
      */
-    event NamedNewOperators(
-        address registrar,
-        address technical
-    );
+    event NamedNewOperators(address registrar, address technical);
     /**
      * @dev Emitted when the future new registrar operator has accepted the role
      */

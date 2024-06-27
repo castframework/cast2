@@ -11,16 +11,16 @@ async function main() {
 
   const SmartCoin = await ethers.getContractFactory('SecurityToken');
 
-  console.log(`Deploying SecurityToken implementation with registrar[${registrarAddress}] technical[${technicalAddress}]`)
+  console.log(
+    `Deploying SecurityToken implementation with registrar[${registrarAddress}] technical[${technicalAddress}]`,
+  );
 
-  const implementationAddress: SecurityToken = await upgrades.deployImplementation(
-    SecurityToken,
-    {
+  const implementationAddress: SecurityToken =
+    await upgrades.deployImplementation(SecurityToken, {
       kind: 'uups',
       constructorArgs: [registrarAddress, technicalAddress],
       unsafeAllow: ['constructor'],
-    },
-  );
+    });
 
   console.log(`SecurityToken implementation address: ${implementationAddress}`);
 }

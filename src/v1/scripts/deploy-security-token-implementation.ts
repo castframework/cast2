@@ -1,5 +1,5 @@
 import { ethers, upgrades } from 'hardhat';
-import { SecurityToken } from '../../../dist/types';
+import { SecurityTokenV1 } from '../../../dist/types';
 import { GetNewSecurityTokenImplementationConfig } from './configuration/new-security-token-implementation-config';
 
 async function main() {
@@ -9,20 +9,20 @@ async function main() {
   const registrarAddress = config.NewOperatorsAddress.Registrar;
   const technicalAddress = config.NewOperatorsAddress.Technical;
 
-  const SmartCoin = await ethers.getContractFactory('SecurityToken');
+  const SmartCoin = await ethers.getContractFactory('SecurityTokenV1');
 
   console.log(
-    `Deploying SecurityToken implementation with registrar[${registrarAddress}] technical[${technicalAddress}]`,
+    `Deploying SecurityTokenV1 implementation with registrar[${registrarAddress}] technical[${technicalAddress}]`,
   );
 
-  const implementationAddress: SecurityToken =
-    await upgrades.deployImplementation(SecurityToken, {
+  const implementationAddress: SecurityTokenV1 =
+    await upgrades.deployImplementation(SecurityTokenV1, {
       kind: 'uups',
       constructorArgs: [registrarAddress, technicalAddress],
       unsafeAllow: ['constructor'],
     });
 
-  console.log(`SecurityToken implementation address: ${implementationAddress}`);
+  console.log(`SecurityTokenV1 implementation address: ${implementationAddress}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

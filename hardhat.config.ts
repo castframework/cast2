@@ -9,7 +9,7 @@ const {
 } = require("hardhat/builtin-tasks/task-names");
 const path = require("path");
 import "@nomicfoundation/hardhat-chai-matchers"; //Added for revertWithCustomErrors
-import "./src/scripts/verify-implementation";
+import "./src/v1/scripts/verify-implementation";
 
 import * as dotenv from 'dotenv';
 dotenv.config()
@@ -124,9 +124,9 @@ const config : HardhatUserConfig  = {
   },
   mocha: {
     reporter: 'mocha-multi-reporters',
-    // reporterOption: {
-    //   configFile: "mocha-multi-reporters.json"
-    // }
+    reporterOptions: {
+      configFile: "mocha-multi-reporters.json"
+    }
   },
   typechain: {
     outDir: 'dist/types',
@@ -135,7 +135,7 @@ const config : HardhatUserConfig  = {
   },
   paths: {
     sources: './contracts',
-    tests: './src/test',
+    tests: './src/v1/test',
     cache: './cache',
     artifacts: './dist',
   },

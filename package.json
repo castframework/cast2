@@ -54,7 +54,7 @@
     "prettify:sol": "prettier --config ./.prettierrc --write \"{src,contracts}/**/*.sol\"",
     "prettify:ts": "prettier --config ./.prettierrc --write \"./src/**/*.ts\"",
     "prettify": "npm run prettify:ts && npm run prettify:sol",
-    "test": "npx hardhat test",
+    "test": "npm run clean && npx hardhat test",
     "verify": "npx hardhat verify",
     "verify:implem": "npx hardhat verify-implem",
     "pre-commit": "lint-staged --verbose",

@@ -1,5 +1,5 @@
 import { ethers, upgrades } from 'hardhat';
-import { SecurityToken } from '../../../dist/types';
+import { SecurityTokenV1 } from '../../../dist/types';
 import { GetNewSecurityTokenImplementationConfig } from './configuration/new-security-token-implementation-config';
 
 async function main() {
@@ -8,11 +8,11 @@ async function main() {
   const registrarAddress = config.NewOperatorsAddress.Registrar;
   const technicalAddress = config.NewOperatorsAddress.Technical;
 
-  const SecurityToken = await ethers.getContractFactory('SecurityToken');
+  const SecurityTokenV1 = await ethers.getContractFactory('SecurityTokenV1');
 
-  const securityTokenProxifiedInstance: SecurityToken =
+  const securityTokenProxifiedInstance: SecurityTokenV1 =
     await upgrades.deployProxy(
-      SecurityToken,
+      SecurityTokenV1,
       ['https://www.sgforge.com/erc1155/metadata/{id}'],
       {
         kind: 'uups',
@@ -27,10 +27,10 @@ async function main() {
       securityTokenProxifiedInstance.address,
     );
   console.log(
-    `SecurityToken implementation address: ${securityTokenImplAddress}`,
+    `SecurityTokenV1 implementation address: ${securityTokenImplAddress}`,
   );
   console.log(
-    `SecurityToken proxy deployed to ${securityTokenProxifiedInstance.address}`,
+    `SecurityTokenV1 proxy deployed to ${securityTokenProxifiedInstance.address}`,
   );
 }
 

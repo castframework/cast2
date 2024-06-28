@@ -114,6 +114,18 @@ contract SecurityTokenV1 is
         );
         _;
     }
+     /**
+     * @dev Throws if called by any account other than the settlement agent.
+     */
+    modifier onlyTransactionRegistrarAgent(string calldata _transactionId) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        uint tokenId = $.transferRequests[_transactionId].id;
+        require(
+            msg.sender == getRegistrarAgent(tokenId),
+            UnauthorizedRegistrarAgent(tokenId)
+        );
+        _;
+    }
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor(
@@ -316,7 +328,7 @@ contract SecurityTokenV1 is
 
     function cancelTransaction(
         string calldata _transactionId
-    ) external onlySettlementAgent(_transactionId) returns (bool) {
+    ) external onlyTransactionRegistrarAgent(_transactionId) returns (bool) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         TransferRequest memory transferRequest = $.transferRequests[
             _transactionId

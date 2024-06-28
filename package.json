@@ -62,7 +62,8 @@
     "coverage:check-limit": "node check-coverage-limit.js",
     "coverage": "npm run clean && npm run coverage:only && npm run coverage:check-limit",
     "generate:implementation-tx-data": "npx hardhat run src/scripts/generate-implementation-deploy-transaction-data.ts",
-    "generate:proxy-tx-data": "npx hardhat run src/scripts/generate-proxy-deploy-transaction-data.ts"
+    "generate:proxy-tx-data": "npx hardhat run src/scripts/generate-proxy-deploy-transaction-data.ts",
+    "ci:implementation-tx-data-summary": "npx ts-node src/scripts/ci-tools/implementation-deploy-summary.ts"
   },
   "lint-staged": {
     "*.ts": "eslint --ignore-path .gitignore  --max-warnings=0",

@@ -9,6 +9,8 @@ async function main() {
 
     const config = GetNewSecurityTokenProxyConfig();
 
+    console.log("Used config", config);
+
     const outputFile = path.join(config.OutputFolder, "proxy-deploy-data-field.json");
 
     const implInitializerCall = await buildInitializerCall(config.Contracts.ImplementationArtifactName, config.Contracts.BaseUri);

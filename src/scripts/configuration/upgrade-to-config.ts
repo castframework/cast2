@@ -14,8 +14,6 @@ type UpgradeToConfig = z.infer<typeof UpgradeToConfigSchema>;
 export function GetUpgradeToConfig(): UpgradeToConfig {
     let configFromEnv = process.env[EnvConfigVariableName];
 
-    console.log(`Config from env: ${configFromEnv}`);
-
     try{
         return UpgradeToConfigSchema.parse(JSON.parse(configFromEnv || ""));
     } catch(e){

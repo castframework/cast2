@@ -19,8 +19,6 @@ export type NewSecurityTokenImplementationConfig = z.infer<typeof NewSecurityTok
 export function GetNewSecurityTokenImplementationConfig(): NewSecurityTokenImplementationConfig {
     let configFromEnv = process.env[EnvConfigVariableName];
 
-    console.log(`Config from env: ${configFromEnv}`);
-
     try{
         return NewSecurityTokenImplementationConfigSchema.parse(JSON.parse(configFromEnv || ""));
     } catch(e){

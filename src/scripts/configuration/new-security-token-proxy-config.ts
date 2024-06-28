@@ -17,8 +17,6 @@ type NewSecurityTokenProxyConfig = z.infer<typeof NewSecurityTokenProxyConfigSch
 export function GetNewSecurityTokenProxyConfig(): NewSecurityTokenProxyConfig {
     let configFromEnv = process.env[EnvConfigVariableName];
 
-    console.log(`Config from env: ${configFromEnv}`);
-
     try{
         return NewSecurityTokenProxyConfigSchema.parse(JSON.parse(configFromEnv || ""));
     } catch(e){

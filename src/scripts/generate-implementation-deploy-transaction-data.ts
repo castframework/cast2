@@ -8,6 +8,8 @@ async function main() {
 
     const config = GetNewSecurityTokenImplementationConfig();
 
+    console.log("Used config", config);
+
     const outputFile = path.join(config.OutputFolder, "implementation-deploy-data-field.json");
 
     const newImplementationDeployData = await generateNewImplementationDeployTransaction( 

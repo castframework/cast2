@@ -38,7 +38,8 @@
     "solhint-plugin-prettier": "0.0.5",
     "solidity-coverage": "^0.8.12",
     "solidity-docgen": "~0.6.0-beta.35",
-    "typescript": "~4.7.4"
+    "typescript": "~4.7.4",
+    "zod": "^3.23.8"
   },
   "scripts": {
     "clean": "rm -rf dist/ coverage/ reports/ cache/",
@@ -55,11 +56,13 @@
     "prettify": "npm run prettify:ts && npm run prettify:sol",
     "test": "npx hardhat test",
     "verify": "npx hardhat verify",
-    "verify:implem":"npx hardhat verify-implem",
+    "verify:implem": "npx hardhat verify-implem",
     "pre-commit": "lint-staged --verbose",
     "coverage:only": "hardhat coverage",
     "coverage:check-limit": "node check-coverage-limit.js",
-    "coverage": "npm run clean && npm run coverage:only && npm run coverage:check-limit"
+    "coverage": "npm run clean && npm run coverage:only && npm run coverage:check-limit",
+    "generate:implementation-tx-data": "npx hardhat run src/scripts/generate-implementation-deploy-transaction-data.ts",
+    "generate:proxy-tx-data": "npx hardhat run src/scripts/generate-proxy-deploy-transaction-data.ts"
   },
   "lint-staged": {
     "*.ts": "eslint --ignore-path .gitignore  --max-warnings=0",

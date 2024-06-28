@@ -1,19 +1,13 @@
 import { ethers, upgrades } from 'hardhat';
-import * as dotenv from 'dotenv';
 import { SecurityToken } from '../../dist/types';
-dotenv.config();
-
-const REQUIRED_ENVS = ['REGISTRAR', 'TECHNICAL'];
+import { GetNewSecurityTokenImplementationConfig } from './configuration/new-security-token-implementation-config';
 
 async function main() {
-  REQUIRED_ENVS.forEach((envVarName) => {
-    if (!process.env[envVarName]) {
-      console.log(`Missing envars: ${envVarName}`);
-      process.exit(1);
-    }
-  });
-  const registrarAddress = process.env.REGISTRAR;
-  const technicalAddress = process.env.TECHNICAL;
+
+  const config = GetNewSecurityTokenImplementationConfig();
+
+  const registrarAddress = config.NewOperatorsAddress.Registrar;
+  const technicalAddress = config.NewOperatorsAddress.Technical;
 
   const SmartCoin = await ethers.getContractFactory('SecurityToken');
 

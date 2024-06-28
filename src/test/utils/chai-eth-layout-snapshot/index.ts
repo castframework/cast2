@@ -7,7 +7,8 @@ import chai from 'chai';
 import { Context } from 'mocha';
 import snapShot from 'snap-shot-core';
 import path from 'path';
-
+import hardHatConfig from "../../../../hardhat.config";
+import { SolcUserConfig } from 'hardhat/types';
 /* 
   This could be easily make into a package
 */
@@ -21,17 +22,22 @@ declare global {
 }
 
 const compareLayout = ({ expected, value }): snapShot.Result => {
-  const contractName = 'SmartCoin';
+  const contractName = 'SecurityToken';
+  const { version: solcVersion } = hardHatConfig.solidity as SolcUserConfig;
 
   const oldContract = new UpgradeableContract(
     contractName,
     expected.input,
     expected.output,
+    {},
+    solcVersion
   );
   const newContract = new UpgradeableContract(
     contractName,
     value.input,
     value.output,
+    {},
+    solcVersion
   );
 
   const report = oldContract.getStorageUpgradeReport(newContract);

@@ -10,7 +10,7 @@ import path from 'path';
  *
  * @beta
  */
-export function getSmartCoinDataLayout(
+export function getSecurityTokenDataLayout(
   contractSourcePath: string,
   buildFolder = './dist',
   contractSourceFolder = 'contracts',

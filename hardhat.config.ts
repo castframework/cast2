@@ -2,7 +2,7 @@
 import '@nomicfoundation/hardhat-toolbox';
 import '@openzeppelin/hardhat-upgrades';
 import 'solidity-docgen';
-import { subtask } from "hardhat/config";
+import { HardhatUserConfig, subtask } from "hardhat/config";
 
 const {
   TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD,
@@ -56,7 +56,7 @@ subtask(
 );
 
 function buildNetworkFromEnv(){
-  if(!process.env.PRIVATE_KEY){
+  if(!privateKey){
     warn('No PRIVATE_KEY given, only the hardhat test network will be available');
     return {};
   }
@@ -68,11 +68,19 @@ function buildNetworkFromEnv(){
     {
       sepolia: {
         url: `https://sepolia.infura.io/v3/${infuraKey}`,
-        accounts: [privateKey]
+        accounts: [{
+          privateKey: privateKey,
+          balance: "0"
+        }
+      ]
       },
       mainnet: {
         url: `https://mainnet.infura.io/v3/${infuraKey}`,
-        accounts: [privateKey]
+        accounts:  [{
+          privateKey: privateKey,
+          balance: "0"
+        }
+      ]
       },
     } : {}
 
@@ -83,7 +91,11 @@ function buildNetworkFromEnv(){
   {
     exaion:{
       url: `https://node.exaion.com/api/v1/${exaionKey}/rpc`,
-      accounts: [privateKey]
+      accounts:  [{
+          privateKey: privateKey,
+          balance: "0"
+        }
+      ]
     }
   } : {};
 
@@ -94,7 +106,7 @@ function buildNetworkFromEnv(){
   }
 }
 
-module.exports = {
+const config : HardhatUserConfig  = {
   solidity: {
     version: '0.8.26',
     settings: {
@@ -112,9 +124,9 @@ module.exports = {
   },
   mocha: {
     reporter: 'mocha-multi-reporters',
-    reporterOption: {
-      configFile: "mocha-multi-reporters.json"
-    }
+    // reporterOption: {
+    //   configFile: "mocha-multi-reporters.json"
+    // }
   },
   typechain: {
     outDir: 'dist/types',
@@ -135,3 +147,4 @@ module.exports = {
     pages: 'items',
   }
 };
+export default config;

@@ -45,8 +45,8 @@
     "clean": "rm -rf dist/ coverage/ reports/ cache/",
     "build:ts": "tsc",
     "build": "npx hardhat compile",
-    "deploy:proxy": "npx hardhat run src/scripts/deploy-upgradable-smartcoin.ts",
-    "deploy:implementation": "npx hardhat run src/scripts/deploy-smartcoin-implementation.ts",
+    "deploy:proxy": "npx hardhat run src/v1/scripts/deploy-upgradable-smartcoin.ts",
+    "deploy:implementation": "npx hardhat run src/v1/scripts/deploy-smartcoin-implementation.ts",
     "lint:sol": "npx solhint contracts/**/*.sol  ",
     "lint:ts": "eslint --ext ts src/**/*.ts",
     "lint": "npm run lint:ts && npm run lint:sol",
@@ -61,10 +61,10 @@
     "coverage:only": "hardhat coverage",
     "coverage:check-limit": "node check-coverage-limit.js",
     "coverage": "npm run clean && npm run coverage:only && npm run coverage:check-limit",
-    "generate:implementation-tx-data": "npx hardhat run src/scripts/generate-implementation-deploy-transaction-data.ts",
-    "generate:proxy-tx-data": "npx hardhat run src/scripts/generate-proxy-deploy-transaction-data.ts",
-    "ci:implementation-tx-data-summary": "npx ts-node src/scripts/ci-tools/implementation-deploy-summary.ts",
-    "ci:proxy-tx-data-summary": "npx ts-node src/scripts/ci-tools/proxy-deploy-summary.ts"
+    "generate:implementation-tx-data": "npx hardhat run src/v1/scripts/generate-implementation-deploy-transaction-data.ts",
+    "generate:proxy-tx-data": "npx hardhat run src/v1/scripts/generate-proxy-deploy-transaction-data.ts",
+    "ci:implementation-tx-data-summary": "npx ts-node src/v1/scripts/ci-tools/implementation-deploy-summary.ts",
+    "ci:proxy-tx-data-summary": "npx ts-node src/v1/scripts/ci-tools/proxy-deploy-summary.ts"
   },
   "lint-staged": {
     "*.ts": "eslint --ignore-path .gitignore  --max-warnings=0",

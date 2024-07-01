@@ -1,5 +1,5 @@
 import { ethers, upgrades } from 'hardhat';
-import { SecurityToken } from '../../dist/types';
+import { SecurityToken } from '../../../dist/types';
 import { GetNewSecurityTokenImplementationConfig } from './configuration/new-security-token-implementation-config';
 
 async function main() {

@@ -302,7 +302,9 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
         external
         onlyRegistrar
         onlyNotZeroAddress(_implementation)
-        onlyWhenOperatorsMatchAndAcceptedRole(IERC1155AccessControlUpgradeableV1(_implementation))
+        onlyWhenOperatorsMatchAndAcceptedRole(
+            IERC1155AccessControlUpgradeableV1(_implementation)
+        )
     {
         AccessControlStorage storage $ = _getAccessControlStorage();
         $.newImplementation = _implementation;
@@ -324,16 +326,16 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
 
     function setRegistrarAgent(
         uint256 _id,
-        address registrarAgent
+        address _registrarAgent
     ) external onlyWhenRegistrarAgentAlreadySet(_id) {
-        _setRegistrarAgent(_id, registrarAgent);
+        _setRegistrarAgent(_id, _registrarAgent);
     }
 
     function setSettlementAgent(
         uint256 _id,
-        address settlementAgent
+        address _settlementAgent
     ) external onlyWhenSettlementAgentAlreadySet(_id) {
-        _setSettlementAgent(_id, settlementAgent);
+        _setSettlementAgent(_id, _settlementAgent);
     }
 
     function _setSettlementAgent(
@@ -343,12 +345,13 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
         AccessControlStorage storage $ = _getAccessControlStorage();
         $.settlementAgentByTokenId[_id] = _settlementAgent;
     }
+
     function _setRegistrarAgent(
         uint256 _id,
-        address registrarAgent
-    ) internal onlyRegistrar onlyNotZeroAddress(registrarAgent) {
+        address _registrarAgent
+    ) internal onlyRegistrar onlyNotZeroAddress(_registrarAgent) {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        $.registrarAgentByTokenId[_id] = registrarAgent;
+        $.registrarAgentByTokenId[_id] = _registrarAgent;
     }
 
     function pause() external onlyRegistrar {

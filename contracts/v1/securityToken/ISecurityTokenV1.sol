@@ -9,13 +9,20 @@ interface ISecurityTokenV1 {
         Validated,
         Rejected
     }
-    event TransferRequested(
+    event LockReady(
         string transactionId,
         address indexed from,
         address indexed to,
         uint256 id,
         uint256 value,
         bytes data
+    );
+    event LockUpdated(
+        string transactionId,
+        address indexed from,
+        address indexed to,
+        uint256 id,
+        TransferStatus status
     );
     event TransferRejected(string transactionId);
     event TransferValidated(string transactionId);

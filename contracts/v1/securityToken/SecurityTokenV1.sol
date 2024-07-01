@@ -64,8 +64,8 @@ contract SecurityTokenV1 is
     /// @custom:storage-location erc7201:sgforge.storage.SecurityToken
     struct SecurityTokenStorage {
         mapping(string transactionId => TransferRequest) transferRequests;
-        mapping(uint256 id => mapping(address account => uint256)) _engagedAmount;
-        mapping(uint256 id => bool) _minted;
+        mapping(uint256 id => mapping(address account => uint256)) engagedAmount;
+        mapping(uint256 id => bool) minted;
     }
 
     // keccak256(abi.encode(uint256(keccak256("sgforge.storage.SecurityToken")) - 1)) & ~bytes32(uint256(0xff))
@@ -109,7 +109,7 @@ contract SecurityTokenV1 is
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         uint tokenId = $.transferRequests[_transactionId].id;
         require(
-            msg.sender == getSettlementAgent(tokenId),
+            _msgSender() == getSettlementAgent(tokenId),
             UnauthorizedSettlementAgent(tokenId)
         );
         _;
@@ -121,7 +121,7 @@ contract SecurityTokenV1 is
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         uint tokenId = $.transferRequests[_transactionId].id;
         require(
-            msg.sender == getRegistrarAgent(tokenId),
+            _msgSender() == getRegistrarAgent(tokenId),
             UnauthorizedRegistrarAgent(tokenId)
         );
         _;
@@ -211,13 +211,13 @@ contract SecurityTokenV1 is
     ) external onlyRegistrar returns (bool) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         if (data.length != 0) {
-            require(!$._minted[_id], TokenAlreadyMinted(_id));
+            require(!$.minted[_id], TokenAlreadyMinted(_id));
             MintData memory mintData = abi.decode(data, (MintData));
             _setRegistrarAgent(_id, mintData.registrarAgent);
             _setSettlementAgent(_id, mintData.settlementAgent);
-            $._minted[_id] = true;
+            $.minted[_id] = true;
         } else {
-            require($._minted[_id], TokenNotAlreadyMinted(_id));
+            require($.minted[_id], TokenNotAlreadyMinted(_id));
         }
         super._mint(_to, _id, _amount, data);
         return true;
@@ -274,7 +274,7 @@ contract SecurityTokenV1 is
                     TransferStatus.Undefined,
                 TransactionAlreadyExists()
             );
-            $._engagedAmount[_id][_from] += _value;
+            $.engagedAmount[_id][_from] += _value;
             $.transferRequests[transferData.transactionId] = TransferRequest(
                 _from,
                 _to,
@@ -283,7 +283,8 @@ contract SecurityTokenV1 is
                 _data,
                 TransferStatus.Created
             );
-            emit TransferRequested(
+            emit TransferSingle(msg.sender, _from, _to, _id, 0);
+            emit LockReady(
                 transferData.transactionId,
                 _from,
                 _to,
@@ -311,7 +312,7 @@ contract SecurityTokenV1 is
         );
 
         $.transferRequests[_transactionId].status = TransferStatus.Validated;
-        $._engagedAmount[transferRequest.id][
+        $.engagedAmount[transferRequest.id][
             transferRequest.from
         ] -= transferRequest.value;
         super._safeTransferFrom(
@@ -322,7 +323,7 @@ contract SecurityTokenV1 is
             transferRequest.data
         );
 
-        emit TransferValidated(_transactionId);
+        emit LockUpdated(_transactionId, transferRequest.from, transferRequest.to, transferRequest.id, TransferStatus.Validated);
         return true;
     }
 
@@ -339,10 +340,10 @@ contract SecurityTokenV1 is
         );
 
         $.transferRequests[_transactionId].status = TransferStatus.Rejected;
-        $._engagedAmount[transferRequest.id][
+        $.engagedAmount[transferRequest.id][
             transferRequest.from
         ] -= transferRequest.value;
-        emit TransferRejected(_transactionId);
+        emit LockUpdated(_transactionId, transferRequest.from, transferRequest.to, transferRequest.id, TransferStatus.Rejected);
         return true;
     }
 
@@ -386,7 +387,7 @@ contract SecurityTokenV1 is
         uint256 _id
     ) public view returns (uint256) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-        return $._engagedAmount[_id][_addr];
+        return $.engagedAmount[_id][_addr];
     }
 
     // solhint-disable-next-line no-empty-blocks
@@ -403,7 +404,7 @@ contract SecurityTokenV1 is
     ) internal view returns (uint256) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         unchecked {
-            return super.balanceOf(_addr, _id) - $._engagedAmount[_id][_addr]; // No overflow since balance >= engagedAmount
+            return super.balanceOf(_addr, _id) - $.engagedAmount[_id][_addr]; // No overflow since balance >= engagedAmount
         }
     }
 

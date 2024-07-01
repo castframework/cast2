@@ -26,8 +26,8 @@ contract SecurityTokenFakeV3 {
             $.slot := SecurityTokenStorageLocation
         }
     }
-    constructor(
-    ) {}
+
+    constructor() {}
 
     function version() external pure returns (string memory) {
         return "V3";

@@ -3,7 +3,6 @@ import { SecurityTokenV1 } from '../../../dist/types';
 import { GetNewSecurityTokenImplementationConfig } from './configuration/new-security-token-implementation-config';
 
 async function main() {
-
   const config = GetNewSecurityTokenImplementationConfig();
 
   const registrarAddress = config.NewOperatorsAddress.Registrar;
@@ -22,7 +21,9 @@ async function main() {
       unsafeAllow: ['constructor'],
     });
 
-  console.log(`SecurityTokenV1 implementation address: ${implementationAddress}`);
+  console.log(
+    `SecurityTokenV1 implementation address: ${implementationAddress}`,
+  );
 }
 
 // We recommend this pattern to be able to use async/await everywhere

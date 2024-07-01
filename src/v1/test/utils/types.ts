@@ -10,5 +10,5 @@ export type TransferData = {
 export enum TransferKind {
   LOCK = 'Lock',
   DIRECT = 'Direct',
-  UNDEFINED = 'Undefined'
+  UNDEFINED = 'Undefined',
 }

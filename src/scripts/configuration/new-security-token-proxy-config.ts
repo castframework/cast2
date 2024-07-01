@@ -12,7 +12,7 @@ const NewSecurityTokenProxyConfigSchema = z.object({
     OutputFolder: z.string()
 });
 
-type NewSecurityTokenProxyConfig = z.infer<typeof NewSecurityTokenProxyConfigSchema>;
+export type NewSecurityTokenProxyConfig = z.infer<typeof NewSecurityTokenProxyConfigSchema>;
 
 export function GetNewSecurityTokenProxyConfig(): NewSecurityTokenProxyConfig {
     let configFromEnv = process.env[EnvConfigVariableName];

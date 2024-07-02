@@ -20,17 +20,18 @@ async function main() {
         unsafeAllow: ['constructor'],
       },
     );
-
-  await securityTokenProxifiedInstance.deployed();
+    
+  await securityTokenProxifiedInstance.waitForDeployment();
+  const proxyAddress = await securityTokenProxifiedInstance.getAddress();
   const securityTokenImplAddress: string =
     await upgrades.erc1967.getImplementationAddress(
-      securityTokenProxifiedInstance.address,
+      proxyAddress
     );
   console.log(
     `SecurityTokenV1 implementation address: ${securityTokenImplAddress}`,
   );
   console.log(
-    `SecurityTokenV1 proxy deployed to ${securityTokenProxifiedInstance.address}`,
+    `SecurityTokenV1 proxy deployed to ${proxyAddress}`,
   );
 }
 

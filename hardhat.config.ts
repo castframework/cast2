@@ -45,7 +45,7 @@ subtask(
         version: args.solcVersion,
         // This is used as extra information in the build-info files,
         // but other than that is not important
-        longVersion: "soljson-v0.8.26+commit.8a97fa7a.js",
+        longVersion: "0.8.26+commit.8a97fa7a",
       };
     }
 
@@ -68,19 +68,11 @@ function buildNetworkFromEnv(){
     {
       sepolia: {
         url: `https://sepolia.infura.io/v3/${infuraKey}`,
-        accounts: [{
-          privateKey: privateKey,
-          balance: "0"
-        }
-      ]
+        accounts: [privateKey]
       },
       mainnet: {
         url: `https://mainnet.infura.io/v3/${infuraKey}`,
-        accounts:  [{
-          privateKey: privateKey,
-          balance: "0"
-        }
-      ]
+        accounts: [privateKey]
       },
     } : {}
 
@@ -91,11 +83,7 @@ function buildNetworkFromEnv(){
   {
     exaion:{
       url: `https://node.exaion.com/api/v1/${exaionKey}/rpc`,
-      accounts:  [{
-          privateKey: privateKey,
-          balance: "0"
-        }
-      ]
+      accounts:  [privateKey]
     }
   } : {};
 
@@ -110,7 +98,7 @@ const config : HardhatUserConfig  = {
   solidity: {
     version: '0.8.26',
     settings: {
-      viaIR: true,//TODO a discuter pour les custom errors in require
+      viaIR: true,
       optimizer: {
         enabled: true,
         runs: 200,

@@ -45,7 +45,7 @@
     "clean": "rm -rf dist/ coverage/ reports/ cache/",
     "build:ts": "tsc",
     "build": "npx hardhat compile",
-    "deploy:proxy": "npx hardhat run src/v1/scripts/deploy-upgradable-smartcoin.ts",
+    "deploy:proxy": "npx hardhat run src/v1/scripts/deploy-upgradable-securityToken.ts",
     "deploy:implementation": "npx hardhat run src/v1/scripts/deploy-smartcoin-implementation.ts",
     "lint:sol": "npx solhint contracts/**/*.sol  ",
     "lint:ts": "eslint --ext ts src/**/*.ts",

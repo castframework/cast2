@@ -47,6 +47,9 @@ contract SecurityTokenV1 is
     error TransferRequestNotFound();
     error InvalidTransferRequestStatus();
 
+    error InvalidIsinCodeLength();
+    error InvalidIsinCodeCharacter(bytes1 character);
+
     /**
      * @dev Used when "available" balance is insufficient
      */
@@ -408,8 +411,30 @@ contract SecurityTokenV1 is
         }
     }
 
-    // function GetCharacter(string isinCode, uint256 index) public view returns (byte) {
-    //     bytes32 isin = isinCode;
-    //     return isin[index];
-    // }
+    function getTokenIdByIsin(string calldata isinCode) external pure onlyIfValidIsin(isinCode) returns (uint256) {
+        return uint96(bytes12(_toUpper(isinCode)));
+    }
+
+    modifier onlyIfValidIsin(string calldata isinCode) {
+        bytes memory isin = bytes(isinCode);
+        for(uint256 i=0; i<isin.length; i++) {
+            if (
+                isin[i] < 0x30 || 
+                isin[i] > 0x39 && isin[i] < 0x41 ||
+                isin[i] > 0x5A && isin[i] < 0x61 ||
+                isin[i] > 0x7A) revert InvalidIsinCodeCharacter(isin[i]);
+        }
+        require(isin.length == 12, InvalidIsinCodeLength());
+        _;
+    }
+
+    function _toUpper(string calldata isinCode) private pure returns(bytes memory) {
+        bytes memory isin = bytes(isinCode);
+        for(uint256 i=0; i<isin.length; i++) {
+            if (isin[i] >= 0x61 && isin[i] <= 0x7A) {
+                isin[i] = bytes1(uint8(isin[i]) - 32);
+            }
+        }
+        return isin;
+    }
 }

@@ -1,4 +1,4 @@
-import { SecurityToken } from '../../../dist/types';
+import { SecurityTokenV1 } from '../../../dist/types';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import {
@@ -12,8 +12,8 @@ import { Signer } from 'ethers';
 import { EncodedVersionFunction } from '../utils/encodeCall';
 import { BASE_URI, ZERO_ADDRESS } from '../utils/constants';
 
-context('SecurityToken: Proxy', () => {
-  let securityTokenProxy: SecurityToken;
+context('SecurityTokenV1: Proxy', () => {
+  let securityTokenProxy: SecurityTokenV1;
   let signers: {
     registrar: Signer;
     investor1: Signer;
@@ -61,10 +61,7 @@ context('SecurityToken: Proxy', () => {
       it('should not deploy when registrar and technical have same address', async () => {
         const rslt = securityTokenProxy
           .connect(signers.registrar)
-          .nameNewOperators(
-            technicalAddress,
-            technicalAddress,
-          );
+          .nameNewOperators(technicalAddress, technicalAddress);
         expect(rslt).to.be.revertedWithCustomError(
           securityTokenProxy,
           'InconsistentOperators',
@@ -76,16 +73,15 @@ context('SecurityToken: Proxy', () => {
 
       await securityTokenProxy
         .connect(signers.registrar)
-        .nameNewOperators(
-          registrarAddress,
-          technicalAddress,
-        );
+        .nameNewOperators(registrarAddress, technicalAddress);
       securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
       securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
 
-      const newSecurityTokenV2Address = await loadFixture(deploySecurityTokenV2Fixture);
+      const newSecurityTokenV2Address = await loadFixture(
+        deploySecurityTokenV2Fixture,
+      );
 
-     await securityTokenProxy
+      await securityTokenProxy
         .connect(signers.registrar)
         .authorizeImplementation(newSecurityTokenV2Address);
       await securityTokenProxy
@@ -97,15 +93,18 @@ context('SecurityToken: Proxy', () => {
     context('Check new implementation authorization', async function () {
       let newSecurityTokenV2Address: string;
       beforeEach(async () => {
-        newSecurityTokenV2Address = await loadFixture(deploySecurityTokenV2Fixture);
+        newSecurityTokenV2Address = await loadFixture(
+          deploySecurityTokenV2Fixture,
+        );
         await securityTokenProxy
           .connect(signers.registrar)
-          .nameNewOperators(
-            registrarAddress,
-            technicalAddress,
-          );
-        await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
-        await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
+          .nameNewOperators(registrarAddress, technicalAddress);
+        await securityTokenProxy
+          .connect(signers.registrar)
+          .acceptRegistrarRole();
+        await securityTokenProxy
+          .connect(signers.technical)
+          .acceptTechnicalRole();
       });
       it('should emit an event implementation authorized', async function () {
         const authorizedImplemTransaction = await securityTokenProxy
@@ -165,51 +164,56 @@ context('SecurityToken: Proxy', () => {
           .withArgs(newSecurityTokenV2Address);
       });
     });
-    context('Check new securityToken operators role acceptence', async function () {
-      let newSecurityTokenV2Address: string;
-      beforeEach(async () => {
-        newSecurityTokenV2Address = await loadFixture(deploySecurityTokenV2Fixture);
-        await securityTokenProxy
-          .connect(signers.registrar)
-          .nameNewOperators(
-            registrarAddress,
-            technicalAddress,
+    context(
+      'Check new securityToken operators role acceptence',
+      async function () {
+        let newSecurityTokenV2Address: string;
+        beforeEach(async () => {
+          newSecurityTokenV2Address = await loadFixture(
+            deploySecurityTokenV2Fixture,
           );
-      });
-      it('should fail with registrar did not accept his role', async function () {
-        await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
-        const authorizeImplementation = securityTokenProxy
-          .connect(signers.registrar)
-          .authorizeImplementation(newSecurityTokenV2Address);
-        await expect(authorizeImplementation).to.be.revertedWithCustomError(
-          securityTokenProxy,
-          `UnauthorizedRegistrar`,
-        );
-      });
-      it('should fail with technical did not accept his role', async function () {
-        await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
-        const authorizeImplementation = securityTokenProxy
-          .connect(signers.registrar)
-          .authorizeImplementation(newSecurityTokenV2Address);
-        await expect(authorizeImplementation).to.be.revertedWithCustomError(
-          securityTokenProxy,
-          `UnauthorizedTechnical`,
-        );
-      });
-    });
+          await securityTokenProxy
+            .connect(signers.registrar)
+            .nameNewOperators(registrarAddress, technicalAddress);
+        });
+        it('should fail with registrar did not accept his role', async function () {
+          await securityTokenProxy
+            .connect(signers.technical)
+            .acceptTechnicalRole();
+          const authorizeImplementation = securityTokenProxy
+            .connect(signers.registrar)
+            .authorizeImplementation(newSecurityTokenV2Address);
+          await expect(authorizeImplementation).to.be.revertedWithCustomError(
+            securityTokenProxy,
+            `UnauthorizedRegistrar`,
+          );
+        });
+        it('should fail with technical did not accept his role', async function () {
+          await securityTokenProxy
+            .connect(signers.registrar)
+            .acceptRegistrarRole();
+          const authorizeImplementation = securityTokenProxy
+            .connect(signers.registrar)
+            .authorizeImplementation(newSecurityTokenV2Address);
+          await expect(authorizeImplementation).to.be.revertedWithCustomError(
+            securityTokenProxy,
+            `UnauthorizedTechnical`,
+          );
+        });
+      },
+    );
 
     it('should be able to be upgraded only by the technical', async () => {
       await securityTokenProxy
         .connect(signers.registrar)
-        .nameNewOperators(
-          registrarAddress,
-          technicalAddress,
-        );
+        .nameNewOperators(registrarAddress, technicalAddress);
 
       await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
       await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
 
-      const newSecurityTokenAddress = await loadFixture(deploySecurityTokenV2Fixture);
+      const newSecurityTokenAddress = await loadFixture(
+        deploySecurityTokenV2Fixture,
+      );
 
       await securityTokenProxy
         .connect(signers.registrar)
@@ -226,15 +230,22 @@ context('SecurityToken: Proxy', () => {
     context(
       'upgradeTo and UpdateToAndCall must be called only through delegatecall',
       async () => {
-        let securityToken: SecurityToken;
+        let securityToken: SecurityTokenV1;
         let newSecurityTokenAddress: string;
         beforeEach(async () => {
-          const securityTokenOperators = await getSecurityTokenOperatorsAddresses();
-          const SecurityTokenFactory = await ethers.getContractFactory('SecurityToken');
-          securityToken = (await SecurityTokenFactory.deploy(...securityTokenOperators)) as SecurityToken;
+          const securityTokenOperators =
+            await getSecurityTokenOperatorsAddresses();
+          const SecurityTokenFactory = await ethers.getContractFactory(
+            'SecurityTokenV1',
+          );
+          securityToken = (await SecurityTokenFactory.deploy(
+            ...securityTokenOperators,
+          )) as SecurityTokenV1;
           // securityToken.deployed();
 
-          newSecurityTokenAddress = await loadFixture(deploySecurityTokenV2Fixture);
+          newSecurityTokenAddress = await loadFixture(
+            deploySecurityTokenV2Fixture,
+          );
         });
         it('should be able to call upgraded upgradeToAndCall only via delegatecall', async () => {
           const upgrateTo = securityToken

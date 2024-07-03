@@ -1,4 +1,7 @@
-import { MissuseAccessControlInternal, SecurityToken } from '../../../dist/types/';
+import {
+  MissuseAccessControlInternal,
+  SecurityTokenV1,
+} from '../../../dist/types/';
 import { ethers, upgrades } from 'hardhat';
 import { getOperatorSigners } from './signers';
 import { BASE_URI } from './constants';
@@ -11,20 +14,20 @@ export async function getSecurityTokenOperatorsAddresses(): Promise<string[]> {
   return [registrarAddress, technicalAddress];
 }
 
-export async function deploySecurityTokenFixture(): Promise<SecurityToken> {
-  const SecurityToken = await ethers.getContractFactory('SecurityToken');
+export async function deploySecurityTokenFixture(): Promise<SecurityTokenV1> {
+  const SecurityTokenV1 = await ethers.getContractFactory('SecurityTokenV1');
 
   const securityTokenOperators: Array<string> =
     await getSecurityTokenOperatorsAddresses();
   const securityTokenProxyfiedInstance = (await upgrades.deployProxy(
-    SecurityToken,
+    SecurityTokenV1,
     [BASE_URI],
     {
       kind: 'uups',
       constructorArgs: securityTokenOperators,
       unsafeAllow: ['constructor'],
     },
-  )) as SecurityToken;
+  )) as SecurityTokenV1;
   return securityTokenProxyfiedInstance;
 }
 
@@ -32,7 +35,7 @@ export async function deploySecurityTokenV2Fixture(): Promise<string> {
   const signers = await getOperatorSigners();
 
   const SecurityTokenV2Factory = await ethers.getContractFactory(
-    'SecurityTokenV2',
+    'SecurityTokenFakeV2',
     signers.technical,
   );
 

@@ -1,58 +1,65 @@
 import { ethers } from 'hardhat';
-import fs from "fs";
-import path from "path";
+import fs from 'fs';
+import path from 'path';
 import { GetNewSecurityTokenImplementationConfig } from './configuration/new-security-token-implementation-config';
 
 async function main() {
-    console.log("Starting...");
+  console.log('Starting...');
 
-    const config = GetNewSecurityTokenImplementationConfig();
+  const config = GetNewSecurityTokenImplementationConfig();
 
-    console.log("Used config", config);
+  console.log('Used config', config);
 
-    const outputFile = path.join(config.OutputFolder, "implementation-deploy-data-field.json");
+  const outputFile = path.join(
+    config.OutputFolder,
+    'implementation-deploy-data-field.json',
+  );
 
-    const newImplementationDeployData = await generateNewImplementationDeployTransaction( 
-        {
-            RegistrarAddress: config.NewOperatorsAddress.Registrar,
-            TechnicalAddress: config.NewOperatorsAddress.Technical
-        },
-        config.Contracts.ImplementationArtifactName
+  const newImplementationDeployData =
+    await generateNewImplementationDeployTransaction(
+      {
+        RegistrarAddress: config.NewOperatorsAddress.Registrar,
+        TechnicalAddress: config.NewOperatorsAddress.Technical,
+      },
+      config.Contracts.ImplementationArtifactName,
     );
 
-    console.log(`Generated data field :\n${newImplementationDeployData}`);
+  console.log(`Generated data field :\n${newImplementationDeployData}`);
 
-    console.log(`Writing to file : ${outputFile}`);
+  console.log(`Writing to file : ${outputFile}`);
 
-    const fileContentAsPOJO = {
-        description: "Data field to be used in a transaction for the deployment of a new implementation contract of a security token",
-        usedConfig:
-        {
-            ...config
-        },
-        data: newImplementationDeployData
-    }
+  const fileContentAsPOJO = {
+    description:
+      'Data field to be used in a transaction for the deployment of a new implementation contract of a security token',
+    usedConfig: {
+      ...config,
+    },
+    data: newImplementationDeployData,
+  };
 
-    await fs.promises.writeFile(outputFile, JSON.stringify(fileContentAsPOJO, null, "   "));
+  await fs.promises.writeFile(
+    outputFile,
+    JSON.stringify(fileContentAsPOJO, null, '   '),
+  );
 }
 
 async function generateNewImplementationDeployTransaction(
-    operatorAddress: {RegistrarAddress: string, TechnicalAddress: string },
-    implementationContractName: string
+  operatorAddress: { RegistrarAddress: string; TechnicalAddress: string },
+  implementationContractName: string,
 ): Promise<string> {
+  const securityTokenFactory = await ethers.getContractFactory(
+    implementationContractName,
+  );
 
-    const securityTokenFactory =  await ethers.getContractFactory(implementationContractName);
+  const transactionData = await securityTokenFactory.getDeployTransaction(
+    operatorAddress.RegistrarAddress,
+    operatorAddress.TechnicalAddress,
+  );
 
-    const transactionData = await securityTokenFactory
-    .getDeployTransaction(
-        operatorAddress.RegistrarAddress,
-        operatorAddress.TechnicalAddress
-    );
-
-    return transactionData.data?.toString() || "";
+  return transactionData.data?.toString() || '';
 }
 
 main().catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-  });
+  console.error(error);
+  process.exitCode = 1;
+});

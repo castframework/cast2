@@ -2,14 +2,14 @@
 import '@nomicfoundation/hardhat-toolbox';
 import '@openzeppelin/hardhat-upgrades';
 import 'solidity-docgen';
-import { subtask } from "hardhat/config";
+import { HardhatUserConfig, subtask } from "hardhat/config";
 
 const {
   TASK_COMPILE_SOLIDITY_GET_SOLC_BUILD,
 } = require("hardhat/builtin-tasks/task-names");
 const path = require("path");
 import "@nomicfoundation/hardhat-chai-matchers"; //Added for revertWithCustomErrors
-import "./src/scripts/verify-implementation";
+import "./src/v1/scripts/verify-implementation";
 
 import * as dotenv from 'dotenv';
 dotenv.config()
@@ -45,7 +45,7 @@ subtask(
         version: args.solcVersion,
         // This is used as extra information in the build-info files,
         // but other than that is not important
-        longVersion: "soljson-v0.8.26+commit.8a97fa7a.js",
+        longVersion: "0.8.26+commit.8a97fa7a",
       };
     }
 
@@ -56,7 +56,7 @@ subtask(
 );
 
 function buildNetworkFromEnv(){
-  if(!process.env.PRIVATE_KEY){
+  if(!privateKey){
     warn('No PRIVATE_KEY given, only the hardhat test network will be available');
     return {};
   }
@@ -83,7 +83,7 @@ function buildNetworkFromEnv(){
   {
     exaion:{
       url: `https://node.exaion.com/api/v1/${exaionKey}/rpc`,
-      accounts: [privateKey]
+      accounts:  [privateKey]
     }
   } : {};
 
@@ -94,11 +94,11 @@ function buildNetworkFromEnv(){
   }
 }
 
-module.exports = {
+const config : HardhatUserConfig  = {
   solidity: {
     version: '0.8.26',
     settings: {
-      viaIR: true,//TODO a discuter pour les custom errors in require
+      viaIR: true,
       optimizer: {
         enabled: true,
         runs: 200,
@@ -112,7 +112,7 @@ module.exports = {
   },
   mocha: {
     reporter: 'mocha-multi-reporters',
-    reporterOption: {
+    reporterOptions: {
       configFile: "mocha-multi-reporters.json"
     }
   },
@@ -123,7 +123,7 @@ module.exports = {
   },
   paths: {
     sources: './contracts',
-    tests: './src/test',
+    tests: './src/v1/test',
     cache: './cache',
     artifacts: './dist',
   },
@@ -135,3 +135,4 @@ module.exports = {
     pages: 'items',
   }
 };
+export default config;

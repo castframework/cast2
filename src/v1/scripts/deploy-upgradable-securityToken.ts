@@ -1,5 +1,5 @@
 import { ethers, upgrades } from 'hardhat';
-import { SecurityToken } from '../../../dist/types';
+import { SecurityTokenV1 } from '../../../dist/types';
 import { GetNewSecurityTokenImplementationConfig } from './configuration/new-security-token-implementation-config';
 
 async function main() {
@@ -8,26 +8,30 @@ async function main() {
   const registrarAddress = config.NewOperatorsAddress.Registrar;
   const technicalAddress = config.NewOperatorsAddress.Technical;
 
-  const SecurityToken = await ethers.getContractFactory('SecurityToken');
+  const SecurityTokenV1 = await ethers.getContractFactory('SecurityTokenV1');
 
-  const securityTokenProxifiedInstance: SecurityToken = await upgrades.deployProxy(
-    SecurityToken,
-    ['https://www.sgforge.com/erc1155/metadata/{id}'],
-    {
-      kind: 'uups',
-      constructorArgs: [registrarAddress, technicalAddress],
-      unsafeAllow: ['constructor'],
-    },
-  );
-
-  await securityTokenProxifiedInstance.deployed();
+  const securityTokenProxifiedInstance: SecurityTokenV1 =
+    await upgrades.deployProxy(
+      SecurityTokenV1,
+      ['https://www.sgforge.com/erc1155/metadata/{id}'],
+      {
+        kind: 'uups',
+        constructorArgs: [registrarAddress, technicalAddress],
+        unsafeAllow: ['constructor'],
+      },
+    );
+    
+  await securityTokenProxifiedInstance.waitForDeployment();
+  const proxyAddress = await securityTokenProxifiedInstance.getAddress();
   const securityTokenImplAddress: string =
     await upgrades.erc1967.getImplementationAddress(
-      securityTokenProxifiedInstance.address,
+      proxyAddress
     );
-  console.log(`SecurityToken implementation address: ${securityTokenImplAddress}`);
   console.log(
-    `SecurityToken proxy deployed to ${securityTokenProxifiedInstance.address}`,
+    `SecurityTokenV1 implementation address: ${securityTokenImplAddress}`,
+  );
+  console.log(
+    `SecurityTokenV1 proxy deployed to ${proxyAddress}`,
   );
 }
 

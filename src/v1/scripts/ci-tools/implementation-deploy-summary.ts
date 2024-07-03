@@ -1,10 +1,17 @@
-import { GetNewSecurityTokenImplementationConfig, NewSecurityTokenImplementationConfig } from "../configuration/new-security-token-implementation-config";
+import {
+  GetNewSecurityTokenImplementationConfig,
+  NewSecurityTokenImplementationConfig,
+} from '../configuration/new-security-token-implementation-config';
 import path from 'path';
-import process from "process";
+import process from 'process';
 
 const config = GetNewSecurityTokenImplementationConfig();
 
-const stepOutput = require(path.join(process.cwd(),config.OutputFolder,"implementation-deploy-data-field.json"));
+const stepOutput = require(path.join(
+  process.cwd(),
+  config.OutputFolder,
+  'implementation-deploy-data-field.json',
+));
 
 const usedConfig: NewSecurityTokenImplementationConfig = stepOutput.usedConfig;
 

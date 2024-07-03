@@ -1,4 +1,7 @@
-import { SecurityToken, MissuseAccessControlInternal } from '../../../dist/types';
+import {
+  SecurityTokenV1,
+  MissuseAccessControlInternal,
+} from '../../../dist/types';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import {
@@ -12,10 +15,8 @@ import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 import { MintData } from '../utils/types';
 
-
-
-context('SecurityToken', () => {
-  let securityTokenProxy: SecurityToken;
+context('SecurityTokenV1', () => {
+  let securityTokenProxy: SecurityTokenV1;
   let signers: {
     registrar: Signer;
     issuer: Signer;
@@ -32,7 +33,7 @@ context('SecurityToken', () => {
   let investor2Address: string;
   let technicalAddress: string;
 
-  context('SecurityToken: naming operators', async function () {
+  context('SecurityTokenV1: naming operators', async function () {
     beforeEach(async () => {
       securityTokenProxy = await loadFixture(deploySecurityTokenFixture);
 
@@ -69,10 +70,7 @@ context('SecurityToken', () => {
       beforeEach(async () => {
         nameNewOperatorsTransaction = await securityTokenProxy
           .connect(signers.registrar)
-          .nameNewOperators(
-            registrarAddress,
-            technicalAddress,
-          );
+          .nameNewOperators(registrarAddress, technicalAddress);
       });
       it('should emit an event NamedNewOperatots', async () => {
         await expect(nameNewOperatorsTransaction)
@@ -82,10 +80,7 @@ context('SecurityToken', () => {
       it('only registrar could name new operators', async () => {
         const nameNewOperators = securityTokenProxy
           .connect(signers.investor1)
-          .nameNewOperators(
-            registrarAddress,
-            technicalAddress,
-          );
+          .nameNewOperators(registrarAddress, technicalAddress);
         await expect(nameNewOperators).to.be.revertedWithCustomError(
           securityTokenProxy,
           `UnauthorizedRegistrar`,
@@ -139,11 +134,15 @@ context('SecurityToken', () => {
       signers = await getOperatorSigners();
       securityTokenProxy = await loadFixture(deploySecurityTokenFixture);
 
-      receiverAddress = await signers.investor1.getAddress()
-      registrarAddress = await signers.registrar.getAddress()
+      receiverAddress = await signers.investor1.getAddress();
+      registrarAddress = await signers.registrar.getAddress();
       settlementAgentAddress = await signers.settler.getAddress();
       newRegistrarAddress = await signers.investor3.getAddress();
-      const minData: MintData = { registrarAgent: registrarAddress, settlementAgent: settlementAgentAddress, metadataUri: "0x" }
+      const minData: MintData = {
+        registrarAgent: registrarAddress,
+        settlementAgent: settlementAgentAddress,
+        metadataUri: '0x',
+      };
       const AbiCoder = new ethers.AbiCoder();
       await securityTokenProxy
         .connect(signers.registrar)
@@ -151,32 +150,65 @@ context('SecurityToken', () => {
           receiverAddress,
           tokenId,
           amount,
-          AbiCoder.encode(["tuple(address registrarAgent, string settlementAgent, string metadataUri) mintData"], [minData])
+          AbiCoder.encode(
+            [
+              'tuple(address registrarAgent, string settlementAgent, string metadataUri) mintData',
+            ],
+            [minData],
+          ),
         );
     });
-    it('should be able to set token\'s settlement agent', async () => {
-      await securityTokenProxy.connect(signers.registrar).setSettlementAgent(tokenId, receiverAddress);
-      await expect(await securityTokenProxy.getSettlementAgent(tokenId)).to.be.equals(receiverAddress);
+    it("should be able to set token's settlement agent", async () => {
+      await securityTokenProxy
+        .connect(signers.registrar)
+        .setSettlementAgent(tokenId, receiverAddress);
+      await expect(
+        await securityTokenProxy.getSettlementAgent(tokenId),
+      ).to.be.equals(receiverAddress);
     });
-    it('should be able to set token\'s registrar agent', async () => {
-      await securityTokenProxy.connect(signers.registrar).setRegistrarAgent(tokenId, newRegistrarAddress);
-      await expect(await securityTokenProxy.getRegistrarAgent(tokenId)).to.be.equals(newRegistrarAddress);
+    it("should be able to set token's registrar agent", async () => {
+      await securityTokenProxy
+        .connect(signers.registrar)
+        .setRegistrarAgent(tokenId, newRegistrarAddress);
+      await expect(
+        await securityTokenProxy.getRegistrarAgent(tokenId),
+      ).to.be.equals(newRegistrarAddress);
     });
-    it('only registrar could set token\'s settlement agent', async () => {
-      const setSettlementAgent = securityTokenProxy.connect(signers.technical).setSettlementAgent(tokenId, receiverAddress);
-      await expect(setSettlementAgent).to.be.revertedWithCustomError(securityTokenProxy, "UnauthorizedRegistrar");
+    it("only registrar could set token's settlement agent", async () => {
+      const setSettlementAgent = securityTokenProxy
+        .connect(signers.technical)
+        .setSettlementAgent(tokenId, receiverAddress);
+      await expect(setSettlementAgent).to.be.revertedWithCustomError(
+        securityTokenProxy,
+        'UnauthorizedRegistrar',
+      );
     });
-    it('only registrar could set token\'s registrar agent', async () => {
-      const setRegistrarAgent = securityTokenProxy.connect(signers.technical).setRegistrarAgent(tokenId, newRegistrarAddress);
-      await expect(setRegistrarAgent).to.be.revertedWithCustomError(securityTokenProxy, "UnauthorizedRegistrar");
+    it("only registrar could set token's registrar agent", async () => {
+      const setRegistrarAgent = securityTokenProxy
+        .connect(signers.technical)
+        .setRegistrarAgent(tokenId, newRegistrarAddress);
+      await expect(setRegistrarAgent).to.be.revertedWithCustomError(
+        securityTokenProxy,
+        'UnauthorizedRegistrar',
+      );
     });
-    it('should not be able to set token\'s settlement agent to zero address', async () => {
-      const setSettlementAgent = securityTokenProxy.connect(signers.registrar).setSettlementAgent(tokenId, ZERO_ADDRESS);
-      await expect(setSettlementAgent).to.be.revertedWithCustomError(securityTokenProxy, "ZeroAddressCheck");
+    it("should not be able to set token's settlement agent to zero address", async () => {
+      const setSettlementAgent = securityTokenProxy
+        .connect(signers.registrar)
+        .setSettlementAgent(tokenId, ZERO_ADDRESS);
+      await expect(setSettlementAgent).to.be.revertedWithCustomError(
+        securityTokenProxy,
+        'ZeroAddressCheck',
+      );
     });
-    it('should not be able to set token\'s registrar agent to zero address', async () => {
-      const setRegistrarAgent = securityTokenProxy.connect(signers.registrar).setRegistrarAgent(tokenId, ZERO_ADDRESS);
-      await expect(setRegistrarAgent).to.be.revertedWithCustomError(securityTokenProxy, "ZeroAddressCheck");
+    it("should not be able to set token's registrar agent to zero address", async () => {
+      const setRegistrarAgent = securityTokenProxy
+        .connect(signers.registrar)
+        .setRegistrarAgent(tokenId, ZERO_ADDRESS);
+      await expect(setRegistrarAgent).to.be.revertedWithCustomError(
+        securityTokenProxy,
+        'ZeroAddressCheck',
+      );
     });
   });
   context('Should not to be able to set token agents', async () => {
@@ -189,19 +221,27 @@ context('SecurityToken', () => {
       signers = await getOperatorSigners();
       securityTokenProxy = await loadFixture(deploySecurityTokenFixture);
 
-      receiverAddress = await signers.investor1.getAddress()
-      registrarAddress = await signers.registrar.getAddress()
+      receiverAddress = await signers.investor1.getAddress();
+      registrarAddress = await signers.registrar.getAddress();
       settlementAgentAddress = await signers.settler.getAddress();
       newRegistrarAddress = await signers.investor3.getAddress();
     });
-    it('should not be able to set token\'s settlement agent', async () => {
-      await expect(securityTokenProxy.connect(signers.registrar).setSettlementAgent(tokenId, receiverAddress)).to.be.revertedWithCustomError(
+    it("should not be able to set token's settlement agent", async () => {
+      await expect(
+        securityTokenProxy
+          .connect(signers.registrar)
+          .setSettlementAgent(tokenId, receiverAddress),
+      ).to.be.revertedWithCustomError(
         securityTokenProxy,
         `NoSettlementAgentCurrentlySet`,
       );
     });
-    it('should not be able to set token\'s registrar agent', async () => {
-      await expect(securityTokenProxy.connect(signers.registrar).setRegistrarAgent(tokenId, newRegistrarAddress)).to.be.revertedWithCustomError(
+    it("should not be able to set token's registrar agent", async () => {
+      await expect(
+        securityTokenProxy
+          .connect(signers.registrar)
+          .setRegistrarAgent(tokenId, newRegistrarAddress),
+      ).to.be.revertedWithCustomError(
         securityTokenProxy,
         `NoRegistrarAgentCurrentlySet`,
       );
@@ -212,17 +252,20 @@ context('SecurityToken', () => {
     async function () {
       let newSecurityTokenV2Address: string;
       beforeEach(async () => {
-        newSecurityTokenV2Address = await loadFixture(deploySecurityTokenV2Fixture);
+        newSecurityTokenV2Address = await loadFixture(
+          deploySecurityTokenV2Fixture,
+        );
       });
       it('only registar could authorize new implementation', async function () {
         await securityTokenProxy
           .connect(signers.registrar)
-          .nameNewOperators(
-            registrarAddress,
-            technicalAddress,
-          );
-        await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
-        await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
+          .nameNewOperators(registrarAddress, technicalAddress);
+        await securityTokenProxy
+          .connect(signers.registrar)
+          .acceptRegistrarRole();
+        await securityTokenProxy
+          .connect(signers.technical)
+          .acceptTechnicalRole();
         const authorizeImplementation = securityTokenProxy
           .connect(signers.technical)
           .authorizeImplementation(newSecurityTokenV2Address);
@@ -234,12 +277,13 @@ context('SecurityToken', () => {
       it('only not zero address implementation should be authorized', async function () {
         await securityTokenProxy
           .connect(signers.registrar)
-          .nameNewOperators(
-            registrarAddress,
-            technicalAddress,
-          );
-        await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
-        await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
+          .nameNewOperators(registrarAddress, technicalAddress);
+        await securityTokenProxy
+          .connect(signers.registrar)
+          .acceptRegistrarRole();
+        await securityTokenProxy
+          .connect(signers.technical)
+          .acceptTechnicalRole();
         const authorizeImplementation = securityTokenProxy
           .connect(signers.registrar)
           .authorizeImplementation(ZERO_ADDRESS);
@@ -251,12 +295,13 @@ context('SecurityToken', () => {
       it('should fail with registrar did not match implementation registrar', async function () {
         await securityTokenProxy
           .connect(signers.registrar)
-          .nameNewOperators(
-            investor1Address,
-            technicalAddress,
-          );
-        await securityTokenProxy.connect(signers.investor1).acceptRegistrarRole();
-        await securityTokenProxy.connect(signers.technical).acceptTechnicalRole();
+          .nameNewOperators(investor1Address, technicalAddress);
+        await securityTokenProxy
+          .connect(signers.investor1)
+          .acceptRegistrarRole();
+        await securityTokenProxy
+          .connect(signers.technical)
+          .acceptTechnicalRole();
         const authorizeImplementation = securityTokenProxy
           .connect(signers.registrar)
           .authorizeImplementation(newSecurityTokenV2Address);
@@ -268,12 +313,13 @@ context('SecurityToken', () => {
       it('should fail with technical did not match implementation technical', async function () {
         await securityTokenProxy
           .connect(signers.registrar)
-          .nameNewOperators(
-            registrarAddress,
-            investor1Address,
-          );
-        await securityTokenProxy.connect(signers.registrar).acceptRegistrarRole();
-        await securityTokenProxy.connect(signers.investor1).acceptTechnicalRole();
+          .nameNewOperators(registrarAddress, investor1Address);
+        await securityTokenProxy
+          .connect(signers.registrar)
+          .acceptRegistrarRole();
+        await securityTokenProxy
+          .connect(signers.investor1)
+          .acceptTechnicalRole();
 
         const authorizeImplementation = securityTokenProxy
           .connect(signers.registrar)

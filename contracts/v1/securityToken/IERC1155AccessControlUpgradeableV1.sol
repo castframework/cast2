@@ -2,14 +2,11 @@
 
 pragma solidity 0.8.26;
 
-interface IAccessControl {
+interface IERC1155AccessControlUpgradeableV1 {
     /**
      * @dev Emitted when new operators are named by the registrar operator
      */
-    event NamedNewOperators(
-        address registrar,
-        address technical
-    );
+    event NamedNewOperators(address registrar, address technical);
     /**
      * @dev Emitted when the future new registrar operator has accepted the role
      */

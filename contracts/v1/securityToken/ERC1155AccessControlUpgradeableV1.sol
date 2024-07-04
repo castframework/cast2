@@ -123,7 +123,7 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
      * @dev Throws if called by any account other than the registrar.
      */
     modifier onlyRegistrar() {
-        if (msg.sender != registrar) revert UnauthorizedRegistrar();
+        if (_msgSender() != registrar) revert UnauthorizedRegistrar();
         _;
     }
 
@@ -131,7 +131,7 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
      * @dev Throws if called by any account other than the technical.
      */
     modifier onlyTechnical() {
-        if (msg.sender != technical) revert UnauthorizedTechnical();
+        if (_msgSender() != technical) revert UnauthorizedTechnical();
         _;
     }
 
@@ -208,7 +208,7 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
     modifier onlyRegistrarAgent(uint256 _id) {
         AccessControlStorage storage $ = _getAccessControlStorage();
         require(
-            msg.sender == $.registrarAgentByTokenId[_id],
+            _msgSender() == $.registrarAgentByTokenId[_id],
             UnauthorizedRegistrarAgent(_id)
         );
         _;
@@ -273,7 +273,7 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
      */
     function acceptRegistrarRole() external {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        if ($.newRegistrar != msg.sender) revert UnauthorizedRegistrar();
+        if ($.newRegistrar != _msgSender()) revert UnauthorizedRegistrar();
         $.hasAcceptedRole[$.newRegistrar] = true;
         emit AcceptedRegistrarRole($.newRegistrar);
     }
@@ -285,7 +285,7 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
      */
     function acceptTechnicalRole() external {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        if ($.newTechnical != msg.sender) revert UnauthorizedTechnical();
+        if ($.newTechnical != _msgSender()) revert UnauthorizedTechnical();
         $.hasAcceptedRole[$.newTechnical] = true;
         emit AcceptedTechnicalRole($.newTechnical);
     }

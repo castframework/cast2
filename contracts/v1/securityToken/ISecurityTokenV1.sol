@@ -11,6 +11,7 @@ interface ISecurityTokenV1 {
     }
     event LockReady(
         string transactionId,
+        address indexed operator,
         address indexed from,
         address indexed to,
         uint256 id,
@@ -19,13 +20,12 @@ interface ISecurityTokenV1 {
     );
     event LockUpdated(
         string transactionId,
+        address indexed operator,
         address indexed from,
         address indexed to,
         uint256 id,
         TransferStatus status
     );
-    event TransferRejected(string transactionId);
-    event TransferValidated(string transactionId);
 
     struct TransferData {
         string kind;

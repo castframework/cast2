@@ -4,8 +4,8 @@ import { ethers } from 'hardhat';
 export const signerIndex = {
   issuer: 2,
   registrar: 1,
-  settler: 3,
-  investor4: 4,
+  settlementAgent: 3,
+  registrarAgent: 4,
   investor1: 5,
   investor2: 6,
   investor3: 7,

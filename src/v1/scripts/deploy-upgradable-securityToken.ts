@@ -1,7 +1,8 @@
 import { ethers, upgrades } from 'hardhat';
 import { SecurityTokenV1 } from '../../../dist/types';
 import { GetNewSecurityTokenImplementationConfig } from './configuration/new-security-token-implementation-config';
-
+import { getImplementationAddress } from '@openzeppelin/upgrades-core';
+import { network } from 'hardhat';
 async function main() {
   const config = GetNewSecurityTokenImplementationConfig();
 
@@ -20,19 +21,16 @@ async function main() {
         unsafeAllow: ['constructor'],
       },
     );
-    
+
   await securityTokenProxifiedInstance.waitForDeployment();
   const proxyAddress = await securityTokenProxifiedInstance.getAddress();
-  const securityTokenImplAddress: string =
-    await upgrades.erc1967.getImplementationAddress(
-      proxyAddress
-    );
-  console.log(
-    `SecurityTokenV1 implementation address: ${securityTokenImplAddress}`,
+  const currentImplAddress = await getImplementationAddress(
+    network.provider,
+    proxyAddress,
   );
-  console.log(
-    `SecurityTokenV1 proxy deployed to ${proxyAddress}`,
-  );
+
+  console.log(`SecurityTokenV1 implementation address: ${currentImplAddress}`);
+  console.log(`SecurityTokenV1 proxy deployed to ${proxyAddress}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

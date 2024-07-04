@@ -15,16 +15,16 @@ context('SecurityTokenV1', () => {
   let signers: {
     registrar: Signer;
     issuer: Signer;
-    investor4: Signer;
+    registrarAgent: Signer;
     investor1: Signer;
     investor2: Signer;
     investor3: Signer;
-    settler: Signer;
+    settlementAgent: Signer;
   };
   let tokenId = 10;
   let amount: number = 100;
   let receiverAddress;
-  let registrarAddress;
+  let registrarAgentAddress;
   let settlementAgentAddress;
   let newRegistrarAddress;
   const AbiCoder = new ethers.AbiCoder();
@@ -37,12 +37,12 @@ context('SecurityTokenV1', () => {
     securityTokenProxy = await loadFixture(deploySecurityTokenFixture);
 
     receiverAddress = await signers.investor1.getAddress();
-    registrarAddress = await signers.registrar.getAddress();
-    settlementAgentAddress = await signers.settler.getAddress();
+    registrarAgentAddress = await signers.registrarAgent.getAddress();
+    settlementAgentAddress = await signers.settlementAgent.getAddress();
     newRegistrarAddress = await signers.investor3.getAddress();
     uri = '0x';
     mintData = {
-      registrarAgent: registrarAddress,
+      registrarAgent: registrarAgentAddress,
       settlementAgent: settlementAgentAddress,
       metadataUri: '0x',
     };
@@ -73,7 +73,7 @@ context('SecurityTokenV1', () => {
             ['tuple(address registrarAgent, string settlementAgent) mintData'],
             [
               {
-                registrarAgent: registrarAddress,
+                registrarAgent: registrarAgentAddress,
                 settlementAgent: settlementAgentAddress,
               },
             ],
@@ -89,7 +89,7 @@ context('SecurityTokenV1', () => {
     });
     it('should match the initiale registar agent address', async () => {
       expect(await securityTokenProxy.getRegistrarAgent(tokenId)).to.be.eq(
-        registrarAddress,
+        registrarAgentAddress,
       );
     });
     it('should match the initiale settlement agent address', async () => {
@@ -107,7 +107,7 @@ context('SecurityTokenV1', () => {
     });
     it('only registrar could mint tokens', async () => {
       expect(
-        securityTokenProxy.connect(signers.settler).mint(
+        securityTokenProxy.connect(signers.settlementAgent).mint(
           receiverAddress,
           tokenId,
           amount,
@@ -115,7 +115,7 @@ context('SecurityTokenV1', () => {
             ['tuple(address registrarAgent, string settlementAgent) mintData'],
             [
               {
-                registrarAgent: registrarAddress,
+                registrarAgent: registrarAgentAddress,
                 settlementAgent: settlementAgentAddress,
               },
             ],
@@ -158,7 +158,7 @@ context('SecurityTokenV1', () => {
     });
     it('only registrar could burn tokens', async () => {
       const burn = securityTokenProxy
-        .connect(signers.settler)
+        .connect(signers.settlementAgent)
         .burn(receiverAddress, tokenId, amount);
       expect(burn).to.be.revertedWithCustomError(
         securityTokenProxy,
@@ -195,7 +195,7 @@ context('SecurityTokenV1', () => {
     });
     it('only registrar should be able to set base uri', async () => {
       const setBaseUrl = securityTokenProxy
-        .connect(signers.settler)
+        .connect(signers.settlementAgent)
         .setBaseURI('');
 
       expect(setBaseUrl).to.be.revertedWithCustomError(
@@ -205,7 +205,7 @@ context('SecurityTokenV1', () => {
     });
     it('only registrar should be able to set uri', async () => {
       const setBaseUrl = securityTokenProxy
-        .connect(signers.settler)
+        .connect(signers.settlementAgent)
         .setURI(tokenId, 'toto');
       expect(setBaseUrl).to.be.revertedWithCustomError(
         securityTokenProxy,
@@ -221,7 +221,7 @@ context('SecurityTokenV1', () => {
     });
     it('only registrar could set token uri', async () => {
       const burn = securityTokenProxy
-        .connect(signers.settler)
+        .connect(signers.settlementAgent)
         .burn(receiverAddress, tokenId, amount);
       await expect(burn).to.be.revertedWithCustomError(
         securityTokenProxy,
@@ -262,7 +262,7 @@ context('SecurityTokenV1', () => {
         [transferData],
       );
       const safeTransfer = securityTokenProxy
-        .connect(signers.registrar)
+        .connect(signers.registrarAgent)
         .safeTransferFrom(
           receiverAddress,
           settlementAgentAddress,
@@ -277,7 +277,7 @@ context('SecurityTokenV1', () => {
     });
     it('transfer data could not be empty', async () => {
       const safeTransfer = securityTokenProxy
-        .connect(signers.registrar)
+        .connect(signers.registrarAgent)
         .safeTransferFrom(
           receiverAddress,
           settlementAgentAddress,
@@ -292,7 +292,7 @@ context('SecurityTokenV1', () => {
     });
     it("only token's settlement agent could release locked transfer", async () => {
       await securityTokenProxy
-        .connect(signers.registrar)
+        .connect(signers.registrarAgent)
         .safeTransferFrom(
           receiverAddress,
           settlementAgentAddress,
@@ -310,9 +310,10 @@ context('SecurityTokenV1', () => {
         )
         .withArgs(tokenId);
     });
+
     it('settlement agent could release only valid transfer status', async () => {
       await securityTokenProxy
-        .connect(signers.registrar)
+        .connect(signers.registrarAgent)
         .safeTransferFrom(
           receiverAddress,
           settlementAgentAddress,
@@ -321,11 +322,11 @@ context('SecurityTokenV1', () => {
           data,
         );
       await securityTokenProxy
-        .connect(signers.settler)
+        .connect(signers.settlementAgent)
         .releaseTransaction(transactionId);
 
       const cancelReleasedTransaction = securityTokenProxy
-        .connect(signers.settler)
+        .connect(signers.settlementAgent)
         .releaseTransaction(transactionId);
 
       await expect(cancelReleasedTransaction).to.be.revertedWithCustomError(
@@ -335,7 +336,7 @@ context('SecurityTokenV1', () => {
     });
     it("only token's registrar agent could cancel locked transfer", async () => {
       await securityTokenProxy
-        .connect(signers.registrar)
+        .connect(signers.registrarAgent)
         .safeTransferFrom(
           receiverAddress,
           settlementAgentAddress,
@@ -355,7 +356,7 @@ context('SecurityTokenV1', () => {
     });
     it('registrar agent could cancel only valid transfer status', async () => {
       await securityTokenProxy
-        .connect(signers.registrar)
+        .connect(signers.registrarAgent)
         .safeTransferFrom(
           receiverAddress,
           settlementAgentAddress,
@@ -364,11 +365,11 @@ context('SecurityTokenV1', () => {
           data,
         );
       await securityTokenProxy
-        .connect(signers.settler)
+        .connect(signers.settlementAgent)
         .releaseTransaction(transactionId);
 
       const cancelReleasedTransaction = securityTokenProxy
-        .connect(signers.registrar)
+        .connect(signers.registrarAgent)
         .cancelTransaction(transactionId);
 
       await expect(cancelReleasedTransaction).to.be.revertedWithCustomError(
@@ -378,7 +379,7 @@ context('SecurityTokenV1', () => {
     });
     it("only token's settlement agent could cancel locked transfer", async () => {
       await securityTokenProxy
-        .connect(signers.registrar)
+        .connect(signers.registrarAgent)
         .safeTransferFrom(
           receiverAddress,
           settlementAgentAddress,
@@ -398,7 +399,7 @@ context('SecurityTokenV1', () => {
     });
     it('could not release a transaction that does not exists', async () => {
       const releaseTransaction = securityTokenProxy
-        .connect(signers.settler)
+        .connect(signers.settlementAgent)
         .releaseTransaction('fakeTransactionId');
       await expect(releaseTransaction).to.be.revertedWithCustomError(
         securityTokenProxy,
@@ -407,7 +408,7 @@ context('SecurityTokenV1', () => {
     });
     it('could not cancel a transaction that does not exists', async () => {
       const releaseTransaction = securityTokenProxy
-        .connect(signers.settler)
+        .connect(signers.settlementAgent)
         .cancelTransaction('fakeTransactionId');
       await expect(releaseTransaction).to.be.revertedWithCustomError(
         securityTokenProxy,
@@ -421,7 +422,7 @@ context('SecurityTokenV1', () => {
         tokenId,
       );
       const safeTransfer = securityTokenProxy
-        .connect(signers.registrar)
+        .connect(signers.registrarAgent)
         .safeTransferFrom(
           receiverAddress,
           settlementAgentAddress,
@@ -440,7 +441,7 @@ context('SecurityTokenV1', () => {
       it('should emit LockReady event', async () => {
         await expect(
           securityTokenProxy
-            .connect(signers.registrar)
+            .connect(signers.registrarAgent)
             .safeTransferFrom(
               receiverAddress,
               settlementAgentAddress,
@@ -452,6 +453,7 @@ context('SecurityTokenV1', () => {
           .to.emit(securityTokenProxy, 'LockReady')
           .withArgs(
             transactionId,
+            registrarAgentAddress,
             receiverAddress,
             settlementAgentAddress,
             tokenId,
@@ -466,7 +468,7 @@ context('SecurityTokenV1', () => {
           [transferData],
         );
         await securityTokenProxy
-          .connect(signers.registrar)
+          .connect(signers.registrarAgent)
           .safeTransferFrom(
             receiverAddress,
             settlementAgentAddress,
@@ -475,7 +477,7 @@ context('SecurityTokenV1', () => {
             data,
           );
         const transfer2WithSameTransactionId = securityTokenProxy
-          .connect(signers.registrar)
+          .connect(signers.registrarAgent)
           .safeTransferFrom(
             receiverAddress,
             settlementAgentAddress,
@@ -501,7 +503,7 @@ context('SecurityTokenV1', () => {
           [transferData],
         );
         await securityTokenProxy
-          .connect(signers.registrar)
+          .connect(signers.registrarAgent)
           .safeTransferFrom(
             receiverAddress,
             settlementAgentAddress,
@@ -510,7 +512,7 @@ context('SecurityTokenV1', () => {
             data,
           );
         await securityTokenProxy
-          .connect(signers.settler)
+          .connect(signers.settlementAgent)
           .releaseTransaction(transactionId);
         await expect(
           Number(await securityTokenProxy.balanceOf(receiverAddress, tokenId)),
@@ -521,7 +523,7 @@ context('SecurityTokenV1', () => {
           transferAmount.toString(),
         );
       });
-      it('should be able to cancel a lock transfer', async () => {
+      it('should to be able to force release transaction by registrar', async () => {
         const transactionId = randomUUID();
         transferData = {
           kind: TransferKind.LOCK,
@@ -532,7 +534,38 @@ context('SecurityTokenV1', () => {
           [transferData],
         );
         await securityTokenProxy
+          .connect(signers.registrarAgent)
+          .safeTransferFrom(
+            receiverAddress,
+            settlementAgentAddress,
+            tokenId,
+            transferAmount,
+            data,
+          );
+        await securityTokenProxy
           .connect(signers.registrar)
+          .forceReleaseTransaction(transactionId);
+        await expect(
+          Number(await securityTokenProxy.balanceOf(receiverAddress, tokenId)),
+          (amount - transferAmount).toString(),
+        );
+        await expect(
+          await securityTokenProxy.balanceOf(settlementAgentAddress, tokenId),
+          transferAmount.toString(),
+        );
+      });
+      it('should be able to force cancel a lock transfer', async () => {
+        const transactionId = randomUUID();
+        transferData = {
+          kind: TransferKind.LOCK,
+          transactionId: transactionId,
+        };
+        const data = AbiCoder.encode(
+          ['tuple(string kind, string transactionId) transferData'],
+          [transferData],
+        );
+        await securityTokenProxy
+          .connect(signers.registrarAgent)
           .safeTransferFrom(
             receiverAddress,
             settlementAgentAddress,
@@ -548,6 +581,105 @@ context('SecurityTokenV1', () => {
         );
         await securityTokenProxy
           .connect(signers.registrar)
+          .forceCancelTransaction(transactionId);
+        await expect(
+          Number(await securityTokenProxy.balanceOf(receiverAddress, tokenId)),
+          amount.toString(),
+        );
+      });
+      it('only registrar could force release a lock transfer', async () => {
+        const transactionId = randomUUID();
+        transferData = {
+          kind: TransferKind.LOCK,
+          transactionId: transactionId,
+        };
+        const data = AbiCoder.encode(
+          ['tuple(string kind, string transactionId) transferData'],
+          [transferData],
+        );
+        await securityTokenProxy
+          .connect(signers.registrarAgent)
+          .safeTransferFrom(
+            receiverAddress,
+            settlementAgentAddress,
+            tokenId,
+            transferAmount,
+            data,
+          );
+        await expect(
+          Number(
+            await securityTokenProxy.engagedAmount(receiverAddress, tokenId),
+          ),
+          transferAmount.toString(),
+        );
+        const forceReleaseTransaction = securityTokenProxy
+          .connect(signers.registrarAgent)
+          .forceReleaseTransaction(transactionId);
+        await expect(forceReleaseTransaction).to.be.revertedWithCustomError(
+          securityTokenProxy,
+          'UnauthorizedRegistrar',
+        );
+      });
+      it('only registrar could force cancel a lock transfer', async () => {
+        const transactionId = randomUUID();
+        transferData = {
+          kind: TransferKind.LOCK,
+          transactionId: transactionId,
+        };
+        const data = AbiCoder.encode(
+          ['tuple(string kind, string transactionId) transferData'],
+          [transferData],
+        );
+        await securityTokenProxy
+          .connect(signers.registrarAgent)
+          .safeTransferFrom(
+            receiverAddress,
+            settlementAgentAddress,
+            tokenId,
+            transferAmount,
+            data,
+          );
+        await expect(
+          Number(
+            await securityTokenProxy.engagedAmount(receiverAddress, tokenId),
+          ),
+          transferAmount.toString(),
+        );
+        const forceCancelTransaction = securityTokenProxy
+          .connect(signers.registrarAgent)
+          .forceCancelTransaction(transactionId);
+        await expect(forceCancelTransaction).to.be.revertedWithCustomError(
+          securityTokenProxy,
+          'UnauthorizedRegistrar',
+        );
+      });
+      it('should be able to cancel a lock transfer', async () => {
+        const transactionId = randomUUID();
+        transferData = {
+          kind: TransferKind.LOCK,
+          transactionId: transactionId,
+        };
+        const data = AbiCoder.encode(
+          ['tuple(string kind, string transactionId) transferData'],
+          [transferData],
+        );
+        await securityTokenProxy
+          .connect(signers.registrarAgent)
+          .safeTransferFrom(
+            receiverAddress,
+            settlementAgentAddress,
+            tokenId,
+            transferAmount,
+            data,
+          );
+        await expect(
+          Number(
+            await securityTokenProxy.engagedAmount(receiverAddress, tokenId),
+          ),
+          transferAmount.toString(),
+        );
+        await securityTokenProxy
+          .connect(signers.registrarAgent)
           .cancelTransaction(transactionId);
         await expect(
           Number(await securityTokenProxy.balanceOf(receiverAddress, tokenId)),
@@ -562,7 +694,7 @@ context('SecurityTokenV1', () => {
           transactionId,
         };
         await securityTokenProxy
-          .connect(signers.registrar)
+          .connect(signers.registrarAgent)
           .safeTransferFrom(
             receiverAddress,
             settlementAgentAddress,

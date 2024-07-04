@@ -12,8 +12,9 @@ task('verify-implem', 'Verify the implementation')
 
     await run(`verify:verify`, {
       address: _args.address,
-      contract: 'contracts/v1/securityToken/SecurityTokenV1.sol:SecurityTokenV1',
-      constructorArguments: [registrarAddress, technicalAddress]
+      contract:
+        'contracts/v1/securityToken/SecurityTokenV1.sol:SecurityTokenV1',
+      constructorArguments: [registrarAddress, technicalAddress],
     });
     return _args.address;
   });

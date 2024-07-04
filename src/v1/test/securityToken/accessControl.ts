@@ -18,13 +18,13 @@ import { MintData } from '../utils/types';
 context('SecurityTokenV1', () => {
   let securityTokenProxy: SecurityTokenV1;
   let signers: {
-    registrar: Signer;
     issuer: Signer;
-    investor4: Signer;
+    registrar: Signer;
+    settlementAgent: Signer;
+    registrarAgent: Signer;
     investor1: Signer;
     investor2: Signer;
     investor3: Signer;
-    settler: Signer;
     technical: Signer;
   };
 
@@ -136,7 +136,7 @@ context('SecurityTokenV1', () => {
 
       receiverAddress = await signers.investor1.getAddress();
       registrarAddress = await signers.registrar.getAddress();
-      settlementAgentAddress = await signers.settler.getAddress();
+      settlementAgentAddress = await signers.settlementAgent.getAddress();
       newRegistrarAddress = await signers.investor3.getAddress();
       const minData: MintData = {
         registrarAgent: registrarAddress,
@@ -223,7 +223,7 @@ context('SecurityTokenV1', () => {
 
       receiverAddress = await signers.investor1.getAddress();
       registrarAddress = await signers.registrar.getAddress();
-      settlementAgentAddress = await signers.settler.getAddress();
+      settlementAgentAddress = await signers.settlementAgent.getAddress();
       newRegistrarAddress = await signers.investor3.getAddress();
     });
     it("should not be able to set token's settlement agent", async () => {

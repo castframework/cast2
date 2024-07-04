@@ -117,7 +117,7 @@ contract SecurityTokenV1 is
         );
         _;
     }
-     /**
+    /**
      * @dev Throws if called by any account other than the settlement agent.
      */
     modifier onlyTransactionRegistrarAgent(string calldata _transactionId) {
@@ -127,6 +127,19 @@ contract SecurityTokenV1 is
             _msgSender() == getRegistrarAgent(tokenId),
             UnauthorizedRegistrarAgent(tokenId)
         );
+        _;
+    }
+    modifier onlyIfValidIsin(string calldata isinCode) {
+        bytes memory isin = bytes(isinCode);
+        for (uint256 i = 0; i < isin.length; i++) {
+            if (
+                isin[i] < 0x30 ||
+                (isin[i] > 0x39 && isin[i] < 0x41) ||
+                (isin[i] > 0x5A && isin[i] < 0x61) ||
+                isin[i] > 0x7A
+            ) revert InvalidIsinCodeCharacter(isin[i]);
+        }
+        require(isin.length == 12, InvalidIsinCodeLength());
         _;
     }
 
@@ -145,36 +158,11 @@ contract SecurityTokenV1 is
         _disableInitializers();
     }
 
-    function upgradeToAndCall(
-        address _newImplementation,
-        bytes memory data
-    )
-        public
-        payable
-        virtual
-        override
-        onlyProxy
-        consumeAuthorizeImplementation(_newImplementation)
-    {
-        super.upgradeToAndCall(_newImplementation, data);
-        _resetNewOperators();
-    }
-
     /**
      * @dev Returns the version number of this contract
      */
     function version() external pure virtual returns (string memory) {
         return "V1";
-    }
-
-    /**
-     * @dev UUPS initializer that initializes the token's name and symbol
-     */
-    function initialize(string memory _baseUri) public initializer {
-        __ERC1155_init(_baseUri);
-        __ERC1155URIStorage_init();
-        _setBaseURI(_baseUri);
-        __UUPSUpgradeable_init();
     }
 
     function setURI(
@@ -226,31 +214,59 @@ contract SecurityTokenV1 is
         return true;
     }
 
-    function _update(
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory values
-    )
-        internal
-        override(
-            ERC1155Upgradeable,
-            ERC1155SupplyUpgradeable,
-            ERC1155AccessControlUpgradeableV1
-        )
-    {
-        super._update(from, to, ids, values); //TODO check which parent class this method call
+    function releaseTransaction(
+        string calldata _transactionId
+    ) external onlySettlementAgent(_transactionId) returns (bool) {
+        return _releaseTransaction(_transactionId);
     }
 
-    function uri(
-        uint256 _id
+    function cancelTransaction(
+        string calldata _transactionId
+    ) external onlyTransactionRegistrarAgent(_transactionId) returns (bool) {
+        return _cancelTransaction(_transactionId);
+    }
+
+    function forceReleaseTransaction(
+        string calldata _transactionId
+    ) external onlyRegistrar returns (bool) {
+        return _releaseTransaction(_transactionId);
+    }
+
+    function forceCancelTransaction(
+        string calldata _transactionId
+    ) external onlyRegistrar returns (bool) {
+        return _cancelTransaction(_transactionId);
+    }
+
+    function getTokenIdByIsin(
+        string calldata isinCode
+    ) external pure onlyIfValidIsin(isinCode) returns (uint256) {
+        return uint96(bytes12(_toUpper(isinCode)));
+    }
+
+    function upgradeToAndCall(
+        address _newImplementation,
+        bytes memory data
     )
         public
-        view
-        override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable)
-        returns (string memory)
+        payable
+        virtual
+        override
+        onlyProxy
+        consumeAuthorizeImplementation(_newImplementation)
     {
-        return ERC1155URIStorageUpgradeable.uri(_id);
+        super.upgradeToAndCall(_newImplementation, data);
+        _resetNewOperators();
+    }
+
+    /**
+     * @dev UUPS initializer that initializes the token's name and symbol
+     */
+    function initialize(string memory _baseUri) public initializer {
+        __ERC1155_init(_baseUri);
+        __ERC1155URIStorage_init();
+        _setBaseURI(_baseUri);
+        __UUPSUpgradeable_init();
     }
 
     /**
@@ -286,9 +302,10 @@ contract SecurityTokenV1 is
                 _data,
                 TransferStatus.Created
             );
-            emit TransferSingle(msg.sender, _from, _to, _id, 0);
+            emit TransferSingle(_msgSender(), _from, _to, _id, 0);
             emit LockReady(
                 transferData.transactionId,
+                _msgSender(),
                 _from,
                 _to,
                 _id,
@@ -302,72 +319,15 @@ contract SecurityTokenV1 is
         }
     }
 
-    function releaseTransaction(
-        string calldata _transactionId
-    ) external onlySettlementAgent(_transactionId) returns (bool) {
-        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-        TransferRequest memory transferRequest = $.transferRequests[
-            _transactionId
-        ];
-        require(
-            transferRequest.status == TransferStatus.Created,
-            InvalidTransferRequestStatus()
-        );
-
-        $.transferRequests[_transactionId].status = TransferStatus.Validated;
-        $.engagedAmount[transferRequest.id][
-            transferRequest.from
-        ] -= transferRequest.value;
-        super._safeTransferFrom(
-            transferRequest.from,
-            transferRequest.to,
-            transferRequest.id,
-            transferRequest.value,
-            transferRequest.data
-        );
-
-        emit LockUpdated(_transactionId, transferRequest.from, transferRequest.to, transferRequest.id, TransferStatus.Validated);
-        return true;
-    }
-
-    function cancelTransaction(
-        string calldata _transactionId
-    ) external onlyTransactionRegistrarAgent(_transactionId) returns (bool) {
-        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-        TransferRequest memory transferRequest = $.transferRequests[
-            _transactionId
-        ];
-        require(
-            transferRequest.status == TransferStatus.Created,
-            InvalidTransferRequestStatus()
-        );
-
-        $.transferRequests[_transactionId].status = TransferStatus.Rejected;
-        $.engagedAmount[transferRequest.id][
-            transferRequest.from
-        ] -= transferRequest.value;
-        emit LockUpdated(_transactionId, transferRequest.from, transferRequest.to, transferRequest.id, TransferStatus.Rejected);
-        return true;
-    }
-
-    function _isDirectTransfer(string memory kind) private pure returns (bool) {
-        return _compareStr(kind, TRANFER_TYPE_DIRECT);
-    }
-
-    function _isLockTransfer(string memory kind) private pure returns (bool) {
-        return _compareStr(kind, TRANFER_TYPE_LOCK);
-    }
-
-    function _compareStr(
-        string memory str1,
-        string memory str2
-    ) private pure returns (bool) {
-        if (bytes(str1).length != bytes(str2).length) {
-            return false;
-        }
-        return
-            keccak256(abi.encodePacked(str1)) ==
-            keccak256(abi.encodePacked(str2));
+    function uri(
+        uint256 _id
+    )
+        public
+        view
+        override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable)
+        returns (string memory)
+    {
+        return ERC1155URIStorageUpgradeable.uri(_id);
     }
 
     /**
@@ -393,6 +353,22 @@ contract SecurityTokenV1 is
         return $.engagedAmount[_id][_addr];
     }
 
+    function _update(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values
+    )
+        internal
+        override(
+            ERC1155Upgradeable,
+            ERC1155SupplyUpgradeable,
+            ERC1155AccessControlUpgradeableV1
+        )
+    {
+        super._update(from, to, ids, values); //TODO check which parent class this method call
+    }
+
     // solhint-disable-next-line no-empty-blocks
     function _authorizeUpgrade(
         address newImplementation
@@ -411,26 +387,93 @@ contract SecurityTokenV1 is
         }
     }
 
-    function getTokenIdByIsin(string calldata isinCode) external pure onlyIfValidIsin(isinCode) returns (uint256) {
-        return uint96(bytes12(_toUpper(isinCode)));
+    function _cancelTransaction(
+        string calldata _transactionId
+    ) private returns (bool) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        TransferRequest memory transferRequest = $.transferRequests[
+            _transactionId
+        ];
+        require(
+            transferRequest.status == TransferStatus.Created,
+            InvalidTransferRequestStatus()
+        );
+
+        $.transferRequests[_transactionId].status = TransferStatus.Rejected;
+        $.engagedAmount[transferRequest.id][
+            transferRequest.from
+        ] -= transferRequest.value;
+        emit LockUpdated(
+            _transactionId,
+            _msgSender(),
+            transferRequest.from,
+            transferRequest.to,
+            transferRequest.id,
+            TransferStatus.Rejected
+        );
+        return true;
     }
 
-    modifier onlyIfValidIsin(string calldata isinCode) {
-        bytes memory isin = bytes(isinCode);
-        for(uint256 i=0; i<isin.length; i++) {
-            if (
-                isin[i] < 0x30 || 
-                isin[i] > 0x39 && isin[i] < 0x41 ||
-                isin[i] > 0x5A && isin[i] < 0x61 ||
-                isin[i] > 0x7A) revert InvalidIsinCodeCharacter(isin[i]);
+    function _releaseTransaction(
+        string calldata _transactionId
+    ) private returns (bool) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        TransferRequest memory transferRequest = $.transferRequests[
+            _transactionId
+        ];
+        require(
+            transferRequest.status == TransferStatus.Created,
+            InvalidTransferRequestStatus()
+        );
+
+        $.transferRequests[_transactionId].status = TransferStatus.Validated;
+        $.engagedAmount[transferRequest.id][
+            transferRequest.from
+        ] -= transferRequest.value;
+        super._safeTransferFrom(
+            transferRequest.from,
+            transferRequest.to,
+            transferRequest.id,
+            transferRequest.value,
+            transferRequest.data
+        );
+
+        emit LockUpdated(
+            _transactionId,
+            _msgSender(),
+            transferRequest.from,
+            transferRequest.to,
+            transferRequest.id,
+            TransferStatus.Validated
+        );
+        return true;
+    }
+
+    function _isDirectTransfer(string memory kind) private pure returns (bool) {
+        return _compareStr(kind, TRANFER_TYPE_DIRECT);
+    }
+
+    function _isLockTransfer(string memory kind) private pure returns (bool) {
+        return _compareStr(kind, TRANFER_TYPE_LOCK);
+    }
+
+    function _compareStr(
+        string memory str1,
+        string memory str2
+    ) private pure returns (bool) {
+        if (bytes(str1).length != bytes(str2).length) {
+            return false;
         }
-        require(isin.length == 12, InvalidIsinCodeLength());
-        _;
+        return
+            keccak256(abi.encodePacked(str1)) ==
+            keccak256(abi.encodePacked(str2));
     }
 
-    function _toUpper(string calldata isinCode) private pure returns(bytes memory) {
+    function _toUpper(
+        string calldata isinCode
+    ) private pure returns (bytes memory) {
         bytes memory isin = bytes(isinCode);
-        for(uint256 i=0; i<isin.length; i++) {
+        for (uint256 i = 0; i < isin.length; i++) {
             if (isin[i] >= 0x61 && isin[i] <= 0x7A) {
                 isin[i] = bytes1(uint8(isin[i]) - 32);
             }

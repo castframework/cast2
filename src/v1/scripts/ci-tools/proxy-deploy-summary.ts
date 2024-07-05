@@ -21,8 +21,9 @@ const summaryTemplate = `
 ### Used configuration 
 
     - Name : ${usedConfig.Contracts.Name}
-    - Symbol: ${usedConfig.Contracts.Symbol}
-    - BaseUri : ${usedConfig.Contracts.BaseUri}
+    - Symbol : ${usedConfig.Contracts.Symbol}
+    - Default Uri : ${usedConfig.Contracts.DefaultUri}
+    - Base Uri : ${usedConfig.Contracts.BaseUri}
     - ImplementationAddress : ${usedConfig.Contracts.ImplementationAddress}
 
 ### Generated Data Field

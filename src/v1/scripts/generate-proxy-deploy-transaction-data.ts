@@ -18,6 +18,7 @@ async function main() {
 
   const implInitializerCall = await buildInitializerCall(
     config.Contracts.ImplementationArtifactName,
+    config.Contracts.DefaultUri,
     config.Contracts.BaseUri,
     config.Contracts.Name,
     config.Contracts.Symbol
@@ -68,6 +69,7 @@ async function generateNewImplementationDeployTransaction(
 
 async function buildInitializerCall(
   implementationArtifactName: string,
+  defaultUri: string,
   baseUri: string,
   name: string,
   symbol: string
@@ -81,6 +83,7 @@ async function buildInitializerCall(
   const initializeFunction = securityTokenInterface.getFunction('initialize');
 
   return securityTokenInterface.encodeFunctionData(initializeFunction!, [
+    defaultUri,
     baseUri,
     name,
     symbol

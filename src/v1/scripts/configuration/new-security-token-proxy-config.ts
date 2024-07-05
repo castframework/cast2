@@ -7,6 +7,7 @@ const NewSecurityTokenProxyConfigSchema = z.object({
   Contracts: z.object({
     ImplementationArtifactName: z.string(),
     BaseUri: z.string(),
+    DefaultUri: z.string(),
     ImplementationAddress: z.string().refine(...IsETHAddress),
     Name: z.string(),
     Symbol: z.string(),

@@ -19,6 +19,8 @@ async function main() {
   const implInitializerCall = await buildInitializerCall(
     config.Contracts.ImplementationArtifactName,
     config.Contracts.BaseUri,
+    config.Contracts.Name,
+    config.Contracts.Symbol
   );
 
   console.log(`Encoded initializer call : ${implInitializerCall}`);
@@ -67,6 +69,8 @@ async function generateNewImplementationDeployTransaction(
 async function buildInitializerCall(
   implementationArtifactName: string,
   baseUri: string,
+  name: string,
+  symbol: string
 ): Promise<string> {
   const factorySmartCoin = await ethers.getContractFactory(
     implementationArtifactName,
@@ -76,8 +80,10 @@ async function buildInitializerCall(
 
   const initializeFunction = securityTokenInterface.getFunction('initialize');
 
-  return securityTokenInterface.encodeFunctionData(initializeFunction, [
+  return securityTokenInterface.encodeFunctionData(initializeFunction!, [
     baseUri,
+    name,
+    symbol
   ]);
 }
 

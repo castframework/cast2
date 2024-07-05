@@ -282,11 +282,12 @@ contract SecurityTokenV1 is
      * @dev UUPS initializer that initializes the token's name and symbol
      */
     function initialize(
+        string memory _uri,
         string memory _baseUri,
         string memory _name,
         string memory _symbol
     ) public initializer {
-        __ERC1155_init(_baseUri);
+        __ERC1155_init(_uri);
         __ERC1155URIStorage_init();
         _setBaseURI(_baseUri);
         __UUPSUpgradeable_init();
@@ -307,7 +308,7 @@ contract SecurityTokenV1 is
         bytes memory _data
     )
         public
-        override
+        override(ERC1155Upgradeable, ISecurityTokenV1)
         onlyRegistrarAgent(_id)
         onlyWhenBalanceAvailable(_from, _id, _value)
     {
@@ -351,7 +352,7 @@ contract SecurityTokenV1 is
     )
         public
         view
-        override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable)
+        override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable, ISecurityTokenV1)
         returns (string memory)
     {
         return ERC1155URIStorageUpgradeable.uri(_id);
@@ -365,7 +366,7 @@ contract SecurityTokenV1 is
     function balanceOf(
         address _addr,
         uint256 _id
-    ) public view override(ERC1155Upgradeable) returns (uint256) {
+    ) public view override(ERC1155Upgradeable, ISecurityTokenV1) returns (uint256) {
         return _availableBalance(_addr, _id);
     }
 

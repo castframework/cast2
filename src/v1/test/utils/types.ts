@@ -12,3 +12,9 @@ export enum TransferKind {
   DIRECT = 'Direct',
   UNDEFINED = 'Undefined',
 }
+export enum TransferStatus {
+  Undefined = 0,
+  Created = 1,
+  Validated = 2,
+  Rejected = 3,
+}

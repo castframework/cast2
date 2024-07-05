@@ -50,6 +50,9 @@ contract SecurityTokenV1 is
     error InvalidIsinCodeLength();
     error InvalidIsinCodeCharacter(bytes1 character);
 
+    error InvalidUUIDCharacter();
+    error InvalidUUIDLength();
+
     /**
      * @dev Used when "available" balance is insufficient
      */
@@ -69,6 +72,8 @@ contract SecurityTokenV1 is
         mapping(string transactionId => TransferRequest) transferRequests;
         mapping(uint256 id => mapping(address account => uint256)) engagedAmount;
         mapping(uint256 id => bool) minted;
+        string name;
+        string symbol;
     }
 
     // keccak256(abi.encode(uint256(keccak256("sgforge.storage.SecurityToken")) - 1)) & ~bytes32(uint256(0xff))
@@ -109,6 +114,7 @@ contract SecurityTokenV1 is
      * @dev Throws if called by any account other than the settlement agent.
      */
     modifier onlySettlementAgent(string calldata _transactionId) {
+        checkUUIDValidity(_transactionId);
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         uint tokenId = $.transferRequests[_transactionId].id;
         require(
@@ -121,6 +127,7 @@ contract SecurityTokenV1 is
      * @dev Throws if called by any account other than the settlement agent.
      */
     modifier onlyTransactionRegistrarAgent(string calldata _transactionId) {
+        checkUUIDValidity(_transactionId);
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         uint tokenId = $.transferRequests[_transactionId].id;
         require(
@@ -163,6 +170,16 @@ contract SecurityTokenV1 is
      */
     function version() external pure virtual returns (string memory) {
         return "V1";
+    }
+
+    function name() external view returns (string memory) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        return $.name;
+    }
+
+    function symbol() external view returns (string memory) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        return $.symbol;
     }
 
     function setURI(
@@ -229,12 +246,14 @@ contract SecurityTokenV1 is
     function forceReleaseTransaction(
         string calldata _transactionId
     ) external onlyRegistrar returns (bool) {
+        checkUUIDValidity(_transactionId);
         return _releaseTransaction(_transactionId);
     }
 
     function forceCancelTransaction(
         string calldata _transactionId
     ) external onlyRegistrar returns (bool) {
+        checkUUIDValidity(_transactionId);
         return _cancelTransaction(_transactionId);
     }
 
@@ -262,11 +281,19 @@ contract SecurityTokenV1 is
     /**
      * @dev UUPS initializer that initializes the token's name and symbol
      */
-    function initialize(string memory _baseUri) public initializer {
+    function initialize(
+        string memory _baseUri,
+        string memory _name,
+        string memory _symbol
+    ) public initializer {
         __ERC1155_init(_baseUri);
         __ERC1155URIStorage_init();
         _setBaseURI(_baseUri);
         __UUPSUpgradeable_init();
+
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        $.name = _name;
+        $.symbol = _symbol;
     }
 
     /**
@@ -288,6 +315,7 @@ contract SecurityTokenV1 is
         require(_data.length > 0, DataTransferEmpty());
         TransferData memory transferData = abi.decode(_data, (TransferData));
         if (_isLockTransfer(transferData.kind)) {
+            checkUUIDValidity(transferData.transactionId);
             require(
                 $.transferRequests[transferData.transactionId].status ==
                     TransferStatus.Undefined,
@@ -299,7 +327,6 @@ contract SecurityTokenV1 is
                 _to,
                 _id,
                 _value,
-                _data,
                 TransferStatus.Created
             );
             emit TransferSingle(_msgSender(), _from, _to, _id, 0);
@@ -391,7 +418,7 @@ contract SecurityTokenV1 is
         string calldata _transactionId
     ) private returns (bool) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-        TransferRequest memory transferRequest = $.transferRequests[
+        TransferRequest storage transferRequest = $.transferRequests[
             _transactionId
         ];
         require(
@@ -399,7 +426,7 @@ contract SecurityTokenV1 is
             InvalidTransferRequestStatus()
         );
 
-        $.transferRequests[_transactionId].status = TransferStatus.Rejected;
+        transferRequest.status = TransferStatus.Rejected;
         $.engagedAmount[transferRequest.id][
             transferRequest.from
         ] -= transferRequest.value;
@@ -418,7 +445,7 @@ contract SecurityTokenV1 is
         string calldata _transactionId
     ) private returns (bool) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-        TransferRequest memory transferRequest = $.transferRequests[
+        TransferRequest storage transferRequest = $.transferRequests[
             _transactionId
         ];
         require(
@@ -426,7 +453,7 @@ contract SecurityTokenV1 is
             InvalidTransferRequestStatus()
         );
 
-        $.transferRequests[_transactionId].status = TransferStatus.Validated;
+        transferRequest.status = TransferStatus.Validated;
         $.engagedAmount[transferRequest.id][
             transferRequest.from
         ] -= transferRequest.value;
@@ -435,7 +462,7 @@ contract SecurityTokenV1 is
             transferRequest.to,
             transferRequest.id,
             transferRequest.value,
-            transferRequest.data
+            ""
         );
 
         emit LockUpdated(
@@ -470,7 +497,7 @@ contract SecurityTokenV1 is
     }
 
     function _toUpper(
-        string calldata isinCode
+        string memory isinCode
     ) private pure returns (bytes memory) {
         bytes memory isin = bytes(isinCode);
         for (uint256 i = 0; i < isin.length; i++) {
@@ -479,5 +506,35 @@ contract SecurityTokenV1 is
             }
         }
         return isin;
+    }
+
+    function checkUUIDValidity(string memory str) private pure {
+        bytes memory maybeUUID = bytes(str);
+        require(bytes(maybeUUID).length == 36, InvalidUUIDLength());
+        for (uint256 i = 0; i < 8; i++) {
+            require(isValidUUIDCharacter(maybeUUID[i]), InvalidUUIDCharacter());
+        }
+        require(maybeUUID[8] == 0x2d, InvalidUUIDCharacter());
+        for (uint256 i = 9; i < 13; i++) {
+            require(isValidUUIDCharacter(maybeUUID[i]), InvalidUUIDCharacter());
+        }
+        require(maybeUUID[13] == 0x2d, InvalidUUIDCharacter());
+        for (uint256 i = 14; i < 18; i++) {
+            require(isValidUUIDCharacter(maybeUUID[i]), InvalidUUIDCharacter());
+        }
+        require(maybeUUID[18] == 0x2d, InvalidUUIDCharacter());
+        for (uint256 i = 19; i < 23; i++) {
+            require(isValidUUIDCharacter(maybeUUID[i]), InvalidUUIDCharacter());
+        }
+        require(maybeUUID[23] == 0x2d, InvalidUUIDCharacter());
+        for (uint256 i = 24; i < 36; i++) {
+            require(isValidUUIDCharacter(maybeUUID[i]), InvalidUUIDCharacter());
+        }
+    }
+
+    function isValidUUIDCharacter(bytes1 character) private pure returns (bool) {
+        return
+            (character >= 0x30 && character <= 0x39) ||
+            (character >= 0x61 && character <= 0x66);
     }
 }

@@ -4,7 +4,7 @@ import {
 } from '../../../dist/types/';
 import { ethers, upgrades } from 'hardhat';
 import { getOperatorSigners } from './signers';
-import { BASE_URI } from './constants';
+import { BASE_URI, NAME, SYMBOL } from './constants';
 
 export async function getSecurityTokenOperatorsAddresses(): Promise<string[]> {
   const signers = await getOperatorSigners();
@@ -21,7 +21,7 @@ export async function deploySecurityTokenFixture(): Promise<SecurityTokenV1> {
     await getSecurityTokenOperatorsAddresses();
   const securityTokenProxyfiedInstance = (await upgrades.deployProxy(
     SecurityTokenV1,
-    [BASE_URI],
+    [BASE_URI, NAME, SYMBOL],
     {
       kind: 'uups',
       constructorArgs: securityTokenOperators,

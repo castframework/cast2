@@ -10,7 +10,7 @@ import { getOperatorSigners } from '../utils/signers';
 import { ethers } from 'hardhat';
 import { Signer } from 'ethers';
 import { EncodedVersionFunction } from '../utils/encodeCall';
-import { BASE_URI, ZERO_ADDRESS } from '../utils/constants';
+import { BASE_URI, NAME, SYMBOL, ZERO_ADDRESS } from '../utils/constants';
 
 context('SecurityTokenV1: Proxy', () => {
   let securityTokenProxy: SecurityTokenV1;
@@ -33,7 +33,7 @@ context('SecurityTokenV1: Proxy', () => {
     });
 
     it('should not be able to call initialize after initialization', async () => {
-      const transaction = securityTokenProxy.initialize(BASE_URI);
+      const transaction = securityTokenProxy.initialize(BASE_URI, NAME, SYMBOL);
       await expect(transaction).to.be.revertedWithCustomError(
         securityTokenProxy,
         'InvalidInitialization',

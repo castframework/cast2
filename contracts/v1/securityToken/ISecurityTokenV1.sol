@@ -42,7 +42,6 @@ interface ISecurityTokenV1 {
         address to;
         uint256 id;
         uint256 value;
-        bytes data;
         TransferStatus status;
     }
 }

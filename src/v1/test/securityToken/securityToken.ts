@@ -6,8 +6,14 @@ import { getOperatorSigners } from '../utils/signers';
 import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 import '@nomicfoundation/hardhat-chai-matchers'; //Added for revertWithCustomErrors
-import { MintData, TransferData, TransferKind } from '../utils/types';
+import {
+  MintData,
+  TransferData,
+  TransferKind,
+  TransferStatus,
+} from '../utils/types';
 import { randomUUID } from 'crypto';
+import { NAME, SYMBOL } from '../utils/constants';
 
 context('SecurityTokenV1', () => {
   let securityTokenProxy: SecurityTokenV1;
@@ -61,6 +67,12 @@ context('SecurityTokenV1', () => {
           ),
         );
     await mintFunction();
+  });
+  context('Name and symbol', async () => {
+    it('should match the token name', async () =>
+      await expect(await securityTokenProxy.name()).to.be.eq(NAME));
+    it('should match the token symbol', async () =>
+      await expect(await securityTokenProxy.symbol()).to.be.eq(SYMBOL));
   });
   context('Mint Tokens', async () => {
     it('should revert when data is missing metadataUri', async () => {
@@ -397,24 +409,6 @@ context('SecurityTokenV1', () => {
         )
         .withArgs(tokenId);
     });
-    it('could not release a transaction that does not exists', async () => {
-      const releaseTransaction = securityTokenProxy
-        .connect(signers.settlementAgent)
-        .releaseTransaction('fakeTransactionId');
-      await expect(releaseTransaction).to.be.revertedWithCustomError(
-        securityTokenProxy,
-        'UnauthorizedSettlementAgent',
-      );
-    });
-    it('could not cancel a transaction that does not exists', async () => {
-      const releaseTransaction = securityTokenProxy
-        .connect(signers.settlementAgent)
-        .cancelTransaction('fakeTransactionId');
-      await expect(releaseTransaction).to.be.revertedWithCustomError(
-        securityTokenProxy,
-        'UnauthorizedRegistrarAgent',
-      );
-    });
     it('could make transfer only when balance is available', async () => {
       const fakeTransferAmount = 1000;
       const currentUserBalance = await securityTokenProxy.balanceOf(
@@ -437,10 +431,19 @@ context('SecurityTokenV1', () => {
         )
         .withArgs(tokenId, currentUserBalance, fakeTransferAmount);
     });
-    context('Lock Transfer', () => {
-      it('should emit LockReady event', async () => {
-        await expect(
-          securityTokenProxy
+    context('UUID Validity check', async () => {
+      context('UpperCaseUUID', async () => {
+        const uppercaseUUID = randomUUID().toUpperCase();
+        it('could not initiate a safeTransferFrom with uppercase transactionId', async () => {
+          transferData = {
+            kind: TransferKind.LOCK,
+            transactionId: uppercaseUUID,
+          };
+          const data = AbiCoder.encode(
+            ['tuple(string kind, string transactionId) transferData'],
+            [transferData],
+          );
+          const securityTokenProxyTx = securityTokenProxy
             .connect(signers.registrarAgent)
             .safeTransferFrom(
               receiverAddress,
@@ -448,8 +451,176 @@ context('SecurityTokenV1', () => {
               tokenId,
               transferAmount,
               data,
-            ),
-        )
+            );
+          await expect(securityTokenProxyTx).to.be.revertedWithCustomError(
+            securityTokenProxy,
+            'InvalidUUIDCharacter',
+          );
+        });
+        it('could not release transacion with an uppercase transactionId', async () => {
+          const releaseTransaction = securityTokenProxy
+            .connect(signers.settlementAgent)
+            .releaseTransaction(uppercaseUUID);
+          await expect(releaseTransaction).to.be.revertedWithCustomError(
+            securityTokenProxy,
+            'InvalidUUIDCharacter',
+          );
+        });
+        it('could not cancel transacion with an uppercase transactionId', async () => {
+          const releaseTransaction = securityTokenProxy
+            .connect(signers.settlementAgent)
+            .cancelTransaction(uppercaseUUID);
+          await expect(releaseTransaction).to.be.revertedWithCustomError(
+            securityTokenProxy,
+            'InvalidUUIDCharacter',
+          );
+        });
+        it('could not force release transacion with an uppercase transactionId', async () => {
+          const forceReleaseTransaction = securityTokenProxy
+            .connect(signers.registrar)
+            .forceReleaseTransaction(uppercaseUUID);
+          await expect(forceReleaseTransaction).to.be.revertedWithCustomError(
+            securityTokenProxy,
+            'InvalidUUIDCharacter',
+          );
+        });
+        it('could not force cancel transacion with an invalid UUID', async () => {
+          const forceCancelTransaction = securityTokenProxy
+            .connect(signers.registrar)
+            .forceCancelTransaction(uppercaseUUID);
+          await expect(forceCancelTransaction).to.be.revertedWithCustomError(
+            securityTokenProxy,
+            'InvalidUUIDCharacter',
+          );
+        });
+      });
+      context('Invalid UUID Length', async () => {
+        const truncatedUUID = randomUUID().substring(0, 8);
+        it('could not initiate a safeTransferFrom with invalid transactionId', async () => {
+          transferData = {
+            kind: TransferKind.LOCK,
+            transactionId: truncatedUUID,
+          };
+          const data = AbiCoder.encode(
+            ['tuple(string kind, string transactionId) transferData'],
+            [transferData],
+          );
+          const securityTokenProxyTx = securityTokenProxy
+            .connect(signers.registrarAgent)
+            .safeTransferFrom(
+              receiverAddress,
+              settlementAgentAddress,
+              tokenId,
+              transferAmount,
+              data,
+            );
+          await expect(securityTokenProxyTx).to.be.revertedWithCustomError(
+            securityTokenProxy,
+            'InvalidUUIDLength',
+          );
+        });
+        it('could not release transacion with an invalid transactionId', async () => {
+          const releaseTransaction = securityTokenProxy
+            .connect(signers.settlementAgent)
+            .releaseTransaction(truncatedUUID);
+          await expect(releaseTransaction).to.be.revertedWithCustomError(
+            securityTokenProxy,
+            'InvalidUUIDLength',
+          );
+        });
+        it('could not cancel transacion with an invalid transactionId', async () => {
+          const releaseTransaction = securityTokenProxy
+            .connect(signers.settlementAgent)
+            .cancelTransaction(truncatedUUID);
+          await expect(releaseTransaction).to.be.revertedWithCustomError(
+            securityTokenProxy,
+            'InvalidUUIDLength',
+          );
+        });
+        it('could not force release transacion with an invalid transactionId', async () => {
+          const forceReleaseTransaction = securityTokenProxy
+            .connect(signers.registrar)
+            .forceReleaseTransaction(truncatedUUID);
+          await expect(forceReleaseTransaction).to.be.revertedWithCustomError(
+            securityTokenProxy,
+            'InvalidUUIDLength',
+          );
+        });
+        it('could not force cancel transacion with an invalid UUID', async () => {
+          const forceCancelTransaction = securityTokenProxy
+            .connect(signers.registrar)
+            .forceCancelTransaction(truncatedUUID);
+          await expect(forceCancelTransaction).to.be.revertedWithCustomError(
+            securityTokenProxy,
+            'InvalidUUIDLength',
+          );
+        });
+      });
+      context('Check UUID characters', async () => {
+        const UUIDs = [
+          {
+            uuid: 'ecA4542090d6d-43e2-9aa2-c46cd8c0ff7c',
+            message: 'first uuid block is invalid',
+          },
+          {
+            uuid: 'eca4542090d6d-43e2-9aa2-c46cd8c0ff7c',
+            message: 'first dash missing',
+          },
+          {
+            uuid: '245bd898-7C65-4900-b6f5-86c964149dda',
+            message: 'second uuid block not valid',
+          },
+          {
+            uuid: '710bc717-d7be646da-85a4-df94dcb476e1',
+            message: 'second dash is missing',
+          },
+          {
+            uuid: 'ed409ad5-af5a-4Y35-8833-36850cccdf1f',
+            message: 'third uuid block is invalid',
+          },
+          {
+            uuid: '21738399-4ed1-4954ua99e-294c6859069c',
+            message: 'third dash is missing',
+          },
+          {
+            uuid: 'b4a15d10-ac8c-45f6-B663-5c2dfa2aa26b',
+            message: 'fourth uuid block is invalid',
+          },
+          {
+            uuid: '773479c5-24a9-405e-9001a5c372dee4f68',
+            message: 'fourth dash is missing',
+          },
+          {
+            uuid: '6c329a5c-b4d4-4a9b-b3aa-eb94f8eff01B',
+            message: 'fifth uuid block is invalid',
+          },
+        ];
+        for (let element of UUIDs) {
+          it(`${element.message}`, async () => {
+            const releaseTransaction = securityTokenProxy
+              .connect(signers.settlementAgent)
+              .releaseTransaction(element.uuid);
+            await expect(releaseTransaction).to.be.revertedWithCustomError(
+              securityTokenProxy,
+              'InvalidUUIDCharacter',
+            );
+          });
+        }
+      });
+    });
+    context('Lock Transfer', () => {
+      it('should emit LockReady & transferSingle event', async () => {
+        const safeTransferFromTx = securityTokenProxy
+          .connect(signers.registrarAgent)
+          .safeTransferFrom(
+            receiverAddress,
+            settlementAgentAddress,
+            tokenId,
+            transferAmount,
+            data,
+          );
+
+        await expect(safeTransferFromTx)
           .to.emit(securityTokenProxy, 'LockReady')
           .withArgs(
             transactionId,
@@ -459,6 +630,16 @@ context('SecurityTokenV1', () => {
             tokenId,
             transferAmount,
             data,
+          );
+
+        await expect(safeTransferFromTx)
+          .to.emit(securityTokenProxy, 'TransferSingle')
+          .withArgs(
+            registrarAgentAddress,
+            receiverAddress,
+            settlementAgentAddress,
+            tokenId,
+            0,
           );
       });
       it('should failt when transactionId already exist', async () => {
@@ -522,6 +703,40 @@ context('SecurityTokenV1', () => {
           await securityTokenProxy.balanceOf(settlementAgentAddress, tokenId),
           transferAmount.toString(),
         );
+      });
+      it('should emit lock updated event', async () => {
+        const transactionId = randomUUID();
+        transferData = {
+          kind: TransferKind.LOCK,
+          transactionId: transactionId,
+        };
+        const data = AbiCoder.encode(
+          ['tuple(string kind, string transactionId) transferData'],
+          [transferData],
+        );
+        await securityTokenProxy
+          .connect(signers.registrarAgent)
+          .safeTransferFrom(
+            receiverAddress,
+            settlementAgentAddress,
+            tokenId,
+            transferAmount,
+            data,
+          );
+        expect(
+          securityTokenProxy
+            .connect(signers.settlementAgent)
+            .releaseTransaction(transactionId),
+        )
+          .to.emit(securityTokenProxy, 'LockUpdated')
+          .withArgs(
+            transactionId,
+            registrarAgentAddress,
+            receiverAddress,
+            settlementAgentAddress,
+            tokenId,
+            TransferStatus.Validated,
+          );
       });
       it('should to be able to force release transaction by registrar', async () => {
         const transactionId = randomUUID();
@@ -685,6 +900,37 @@ context('SecurityTokenV1', () => {
           Number(await securityTokenProxy.balanceOf(receiverAddress, tokenId)),
           amount.toString(),
         );
+      });
+      it('cancel a lock transfer shoud emit LockUpdated Event', async () => {
+        const transactionId = randomUUID();
+        transferData = {
+          kind: TransferKind.LOCK,
+          transactionId: transactionId,
+        };
+        const data = AbiCoder.encode(
+          ['tuple(string kind, string transactionId) transferData'],
+          [transferData],
+        );
+        expect(
+          securityTokenProxy
+            .connect(signers.registrarAgent)
+            .safeTransferFrom(
+              receiverAddress,
+              settlementAgentAddress,
+              tokenId,
+              transferAmount,
+              data,
+            ),
+        )
+          .to.emit(securityTokenProxy, 'LockUpdated')
+          .withArgs(
+            transactionId,
+            registrarAgentAddress,
+            receiverAddress,
+            settlementAgentAddress,
+            tokenId,
+            TransferStatus.Rejected,
+          );
       });
     });
     context('Direct transfer', () => {

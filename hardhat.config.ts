@@ -95,6 +95,9 @@ function buildNetworkFromEnv(){
 }
 
 const config : HardhatUserConfig  = {
+  gasReporter:{
+    enabled: true
+  },
   solidity: {
     version: '0.8.26',
     settings: {

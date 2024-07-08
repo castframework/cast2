@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.26;
 
-import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
 interface ISecurityTokenV1 is IERC1155 {
     enum TransferStatus {
@@ -53,8 +53,8 @@ interface ISecurityTokenV1 is IERC1155 {
     function version() external pure returns (string memory);
 
     /**
-    * @dev Returns the name of the token
-    */
+     * @dev Returns the name of the token
+     */
     function name() external view returns (string memory);
 
     /**

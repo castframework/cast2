@@ -26,23 +26,23 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
  *      - only the technical operator can launch a (previously authorised) upgrade of the implementation contract (upgradeTo/upgradeToAndCall)
  * - the registrar agent operator(by tokenId)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ):
  *      - initiate a safeTransferFrom
- *      - cancel a locked safeTransferFrom
+ *      - cancel a locked safeTransferFrom using the cancelTransaction method
  * - the settlement agent operator(by tokenId):
- *      - relase a locked safeTransfrFrom
+ *      - releases a locked safeTransferFrom using the releaseTransaction method
  * It has two types of transfer:
  * - Direct safeTransferFrom:
  *      - direct transfer of tokens to the receiver
  * - Lock safeTransferFrom
  *      - locks the tokens in the holder address by the registrar agent
- *      - transfer could be canceled by the registrar agent or registrar (owner of the registry).
- *      - transfer could be released by the settlement agent or registrar (owner of the registry).
+ *      - transfer could be canceled by the registrar agent or registrar (owner of the contract).
+ *      - transfer could be released by the settlement agent or registrar (owner of the contract).
  * It has two types of mints
- * - Mint with data that contains (Settlement agent, Regisrar agent and token URI)
+ * - Mint with data that contains (Settlement agent, Registrar agent and token URI)
  *      - set up a registrar agent and settlement agent for the token.
  *      - set up an URI for the token
  *      - mints the tokens to receiver address
  * - Mint with empty data
- *      - mints tokens to the receiver address
+ *      - mints tokens to the receiver address (only if the token was previously minted)
  */
 //@custom:oz-upgrades
 contract SecurityTokenV1 is
@@ -221,7 +221,7 @@ contract SecurityTokenV1 is
 
     /**
      * @dev Burns a `amount` amount of `id` tokens from the account `_account`.
-     * NB: only the registrar operator is allowed to burn their tokens
+     * NB: only the registrar operator is allowed to burn tokens
      */
     function burn(
         address _account,
@@ -235,7 +235,6 @@ contract SecurityTokenV1 is
      * @dev Mints a `_amount` amount of `_id` tokens on `_to` address
      * NB: if `_data` data is not empty, set up a registrar agent, settlement agent and an uri for the `_id` token.
      * NB: only the registrar operator is allowed to mint new tokens
-     * NB: the `_to` address has to be unfrozen
      */
     function mint(
         address _to,
@@ -301,17 +300,18 @@ contract SecurityTokenV1 is
     }
 
     /**
-     * @dev Returns the tokenId as number from an `isinCode` isin.
+     * @dev Returns the tokenId as number from an `_isinCode`.
      */
     function getTokenIdByIsin(
         string calldata _isinCode
     ) external pure onlyIfValidIsin(_isinCode) returns (uint256) {
         return uint96(bytes12(_toUpper(_isinCode)));
     }
+
     /**
      * @dev Returns the contract version.
      */
-    function version() external virtual pure override returns (string memory) {
+    function version() external pure virtual override returns (string memory) {
         return "V1";
     }
 
@@ -352,7 +352,7 @@ contract SecurityTokenV1 is
     /**
      * @dev Same semantic as ERC1155's safeTransferFrom function although there are 3 cases :
      * 1- if the type of transfer is a Direct Transfer then the transfer will occur right away
-     * 2- if the type of transfer is Lock Transfer then the transfer will only actually occur once validated by the registrar agent operator
+     * 2- if the type of transfer is Lock Transfer then the transfer will only actually occur once validated by the settlement agent operator
      * using the releaseTransaction method or by the registrar operator(owner of the registry) via forceReleaseTransaction
      * 3- if the type of Transfer is unknown then the transfer will be rejected
      * NB: only the registrar agent of the `_id` token could perform a safeTransferFrom
@@ -369,7 +369,7 @@ contract SecurityTokenV1 is
         onlyRegistrarAgent(_id)
         onlyWhenBalanceAvailable(_from, _id, _value)
     {
-        require(_data.length > 0, DataTransferEmpty());        
+        require(_data.length > 0, DataTransferEmpty());
         TransferData memory transferData = abi.decode(_data, (TransferData));
         if (_isLockTransfer(transferData.kind)) {
             checkUUIDValidity(transferData.transactionId);
@@ -413,21 +413,33 @@ contract SecurityTokenV1 is
         uint256[] memory,
         uint256[] memory,
         bytes memory
-    ) public override(ERC1155Upgradeable,IERC1155) virtual { 
+    ) public virtual override(ERC1155Upgradeable, IERC1155) {
         revert UnsupportedMethod();
     }
 
     /**
      * @dev See {IERC1155-setApprovalForAll}.
      */
-    function setApprovalForAll(address, bool) public override(ERC1155Upgradeable,IERC1155) virtual {
+    function setApprovalForAll(
+        address,
+        bool
+    ) public virtual override(ERC1155Upgradeable, IERC1155) {
         revert UnsupportedMethod();
     }
 
     /**
      * @dev See {IERC1155-isApprovedForAll}.
      */
-    function isApprovedForAll(address, address) public override(ERC1155Upgradeable,IERC1155) view virtual returns(bool) {
+    function isApprovedForAll(
+        address,
+        address
+    )
+        public
+        view
+        virtual
+        override(ERC1155Upgradeable, IERC1155)
+        returns (bool)
+    {
         revert UnsupportedMethod();
     }
 
@@ -493,7 +505,7 @@ contract SecurityTokenV1 is
             ERC1155AccessControlUpgradeableV1
         )
     {
-        super._update(from, to, ids, values); //TODO check which parent class this method call
+        super._update(from, to, ids, values);
     }
 
     // solhint-disable-next-line no-empty-blocks
@@ -632,7 +644,7 @@ contract SecurityTokenV1 is
     }
 
     /**
-     * @dev Returns whether the string `_str` is a valid miniscule UUID format
+     * @dev Returns whether the string `_str` is a valid lowercase UUID format
      */
     function checkUUIDValidity(string memory _str) private pure {
         bytes memory maybeUUID = bytes(_str);
@@ -659,7 +671,7 @@ contract SecurityTokenV1 is
     }
 
     /**
-     * @dev Returns whether the the character `_character`` is number or in [a-f]
+     * @dev Returns whether the the character `_character` is a valid lowercase hexadecimal digit
      */
     function isValidUUIDCharacter(
         bytes1 _character

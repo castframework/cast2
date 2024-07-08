@@ -11,24 +11,7 @@ interface ISecurityTokenV1 is IERC1155 {
         Validated,
         Rejected
     }
-    event LockReady(
-        string transactionId,
-        address indexed operator,
-        address indexed from,
-        address indexed to,
-        uint256 id,
-        uint256 value,
-        bytes data
-    );
-    event LockUpdated(
-        string transactionId,
-        address indexed operator,
-        address indexed from,
-        address indexed to,
-        uint256 id,
-        TransferStatus status
-    );
-
+    
     struct TransferData {
         string kind;
         string transactionId;
@@ -46,6 +29,24 @@ interface ISecurityTokenV1 is IERC1155 {
         uint256 value;
         TransferStatus status;
     }
+
+    event LockReady(
+        string transactionId,
+        address indexed operator,
+        address indexed from,
+        address indexed to,
+        uint256 id,
+        uint256 value,
+        bytes data
+    );
+    event LockUpdated(
+        string transactionId,
+        address indexed operator,
+        address indexed from,
+        address indexed to,
+        uint256 id,
+        TransferStatus status
+    );
 
     /**
      * @dev Returns the version number of this contract
@@ -73,16 +74,15 @@ interface ISecurityTokenV1 is IERC1155 {
     function setBaseURI(string memory baseURI) external;
 
     /**
-     * @dev Burns a `amount` amount of `id` tokens from the caller.
-     * NB: only the registrar operator is allowed to burn their tokens
+     * @dev Burns a `amount` amount of `id` tokens from the account `_account`.
+     * NB: only the registrar operator is allowed to burn tokens
      */
-    // todo : either this or burn(_id, _amount) to only burn on registrar's account
     function burn(address _account, uint256 _id, uint256 _amount) external;
 
     /**
-     * @dev Mints a `amount` amount of `id` tokens on `to` address
+     * @dev Mints a `_amount` amount of `_id` tokens on `_to` address
+     * NB: if `_data` data is not empty, set up a registrar agent, settlement agent and an uri for the `_id` token.
      * NB: only the registrar operator is allowed to mint new tokens
-     * NB: the `_to` address has to be unfrozen
      */
     function mint(
         address _to,
@@ -91,22 +91,41 @@ interface ISecurityTokenV1 is IERC1155 {
         bytes calldata data
     ) external returns (bool);
 
+    /**
+     * @dev Actually performs the transfer request corresponding to the given `_transactionId`
+     * Called by the settlement agent operator
+     */
     function releaseTransaction(
         string calldata _transactionId
     ) external returns (bool);
 
+    /**
+     * @dev Cancels the transfer request corresponding to the given `_transactionId`
+     * Called by the registrar agent operator
+     */
     function cancelTransaction(
         string calldata _transactionId
     ) external returns (bool);
 
+    /**
+     * @dev Actually performs the transfer request corresponding to the given `_transactionId`
+     * Called by the registrar operator
+     */
     function forceReleaseTransaction(
         string calldata _transactionId
     ) external returns (bool);
 
+    /**
+     * @dev Cancels the transfer request corresponding to the given `_transactionId`
+     * Called by the registrar operator
+     */
     function forceCancelTransaction(
         string calldata _transactionId
     ) external returns (bool);
 
+    /**
+     * @dev Returns the tokenId as number from an `_isinCode`.
+     */
     function getTokenIdByIsin(
         string calldata isinCode
     ) external pure returns (uint256);
@@ -122,6 +141,9 @@ interface ISecurityTokenV1 is IERC1155 {
         bytes memory _data
     ) external;
 
+    /**
+     * @dev See {ERC1155URIStorageUpgradeable-uri}.
+     */
     function uri(uint256 _id) external view returns (string memory);
 
     /**

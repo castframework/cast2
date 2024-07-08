@@ -1,10 +1,10 @@
 import { ethers, upgrades } from 'hardhat';
 import { SecurityTokenV1 } from '../../../dist/types';
-import { GetNewSecurityTokenImplementationConfig } from './configuration/new-security-token-implementation-config';
 import { getImplementationAddress } from '@openzeppelin/upgrades-core';
 import { network } from 'hardhat';
+import { GetDeployUpgradableSecrityTokenConfig } from './configuration/deploy-upgradable-security-token-config';
 async function main() {
-  const config = GetNewSecurityTokenImplementationConfig();
+  const config = GetDeployUpgradableSecrityTokenConfig();
 
   const registrarAddress = config.NewOperatorsAddress.Registrar;
   const technicalAddress = config.NewOperatorsAddress.Technical;
@@ -14,7 +14,12 @@ async function main() {
   const securityTokenProxifiedInstance: SecurityTokenV1 =
     await upgrades.deployProxy(
       SecurityTokenV1,
-      ['https://www.sgforge.com/erc1155/metadata/{id}'],
+      [
+        config.Contracts.DefaultUri,
+        config.Contracts.BaseUri,
+        config.Contracts.Name,
+        config.Contracts.Symbol
+      ],
       {
         kind: 'uups',
         constructorArgs: [registrarAddress, technicalAddress],

@@ -69,7 +69,7 @@ contract SecurityTokenV1 is
     error InvalidUUIDCharacter();
     error InvalidUUIDLength();
 
-    error NotSupportedMethod();
+    error UnsupportedMethod();
 
     /**
      * @dev Used when "available" balance is insufficient
@@ -369,11 +369,11 @@ contract SecurityTokenV1 is
         onlyRegistrarAgent(_id)
         onlyWhenBalanceAvailable(_from, _id, _value)
     {
-        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-        require(_data.length > 0, DataTransferEmpty());
+        require(_data.length > 0, DataTransferEmpty());        
         TransferData memory transferData = abi.decode(_data, (TransferData));
         if (_isLockTransfer(transferData.kind)) {
             checkUUIDValidity(transferData.transactionId);
+            SecurityTokenStorage storage $ = _getSecurityTokenStorage();
             require(
                 $.transferRequests[transferData.transactionId].status ==
                     TransferStatus.Undefined,
@@ -408,30 +408,27 @@ contract SecurityTokenV1 is
      * @dev See {IERC1155-safeBatchTransferFrom}.
      */
     function safeBatchTransferFrom(
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory values,
-        bytes memory data
-    ) public override virtual {
-        revert NotSupportedMethod();
-    }
-
-    /**
-     * @dev See {IERC1155-balanceOfBatch}.
-     */
-    function balanceOfBatch(
-        address[] memory accounts,
-        uint256[] memory ids
-    ) public view override virtual returns (uint256[] memory) {
-        revert NotSupportedMethod();
+        address,
+        address,
+        uint256[] memory,
+        uint256[] memory,
+        bytes memory
+    ) public override(ERC1155Upgradeable,IERC1155) virtual { 
+        revert UnsupportedMethod();
     }
 
     /**
      * @dev See {IERC1155-setApprovalForAll}.
      */
-    function setApprovalForAll(address operator, bool approved) public override virtual {
-        revert NotSupportedMethod();
+    function setApprovalForAll(address, bool) public override(ERC1155Upgradeable,IERC1155) virtual {
+        revert UnsupportedMethod();
+    }
+
+    /**
+     * @dev See {IERC1155-isApprovedForAll}.
+     */
+    function isApprovedForAll(address, address) public override(ERC1155Upgradeable,IERC1155) view virtual returns(bool) {
+        revert UnsupportedMethod();
     }
 
     /**

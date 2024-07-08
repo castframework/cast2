@@ -84,15 +84,15 @@ context('SecurityTokenV1', () => {
           [2],
           '0x',
         ),
-      ).to.be.revertedWithCustomError(securityTokenProxy, 'NotSupportedMethod'));
-    it('should not support balanceOfBatch', async () =>
+      ).to.be.revertedWithCustomError(securityTokenProxy, 'UnsupportedMethod'));
+    it('should not support isApprovedForAll', async () =>
       await expect(
-        securityTokenProxy.balanceOfBatch([receiverAddress], [1]),
-      ).to.be.revertedWithCustomError(securityTokenProxy, 'NotSupportedMethod'));
+        securityTokenProxy.isApprovedForAll(receiverAddress, receiverAddress)
+      ).to.be.revertedWithCustomError(securityTokenProxy, 'UnsupportedMethod'));
     it('should not support setApprovalForAll', async () =>
       await expect(
         securityTokenProxy.setApprovalForAll(receiverAddress, true),
-      ).to.be.revertedWithCustomError(securityTokenProxy, 'NotSupportedMethod'));
+      ).to.be.revertedWithCustomError(securityTokenProxy, 'UnsupportedMethod'));
   });
   context('Mint Tokens', async () => {
     it('should revert when data is missing metadataUri', async () => {
@@ -662,7 +662,7 @@ context('SecurityTokenV1', () => {
             0,
           );
       });
-      it('should failt when transactionId already exist', async () => {
+      it('should fail when transactionId already exist', async () => {
         transferData = { kind: TransferKind.LOCK, transactionId };
         const data = AbiCoder.encode(
           ['tuple(string kind, string transactionId) transferData'],
@@ -712,6 +712,19 @@ context('SecurityTokenV1', () => {
             transferAmount,
             data,
           );
+        await expect(
+          Number(await securityTokenProxy.balanceOf(receiverAddress, tokenId)),
+          (amount - transferAmount).toString(),
+        );
+        const balanceOfBatchResult = await securityTokenProxy.balanceOfBatch([receiverAddress], [tokenId]);
+        await expect(
+          Number(balanceOfBatchResult[0]),
+          (amount - transferAmount).toString(),
+        );
+        await expect(
+          await securityTokenProxy.balanceOf(settlementAgentAddress, tokenId),
+          '0',
+        );
         await securityTokenProxy
           .connect(signers.settlementAgent)
           .releaseTransaction(transactionId);

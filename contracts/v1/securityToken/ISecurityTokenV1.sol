@@ -53,7 +53,7 @@ interface ISecurityTokenV1 is IERC1155 {
     function version() external pure returns (string memory);
 
     /**
-    * @dev Returns the version number of this contract
+    * @dev Returns the name of the token
     */
     function name() external view returns (string memory);
 

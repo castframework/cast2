@@ -324,40 +324,60 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
         $.hasAcceptedRole[$.newTechnical] = false;
     }
 
+    /**
+     * @dev Sets  registrar agent `_registrarAgent` for `_id` token
+     * NB: only the registrar could call this method
+     */
     function setRegistrarAgent(
         uint256 _id,
         address _registrarAgent
-    ) external onlyWhenRegistrarAgentAlreadySet(_id) {
+    ) external onlyRegistrar onlyWhenRegistrarAgentAlreadySet(_id) {
         _setRegistrarAgent(_id, _registrarAgent);
     }
 
+    /**
+     * @dev Sets  settlement agent `_settlementAgent` for `_id` token
+     * NB: only the registrar could call this method
+     */
     function setSettlementAgent(
         uint256 _id,
         address _settlementAgent
-    ) external onlyWhenSettlementAgentAlreadySet(_id) {
+    ) external onlyRegistrar onlyWhenSettlementAgentAlreadySet(_id) {
         _setSettlementAgent(_id, _settlementAgent);
     }
 
+    /**
+     * @dev Internal method that sets  settlement agent `_settlementAgent` for `_id` token
+     */
     function _setSettlementAgent(
         uint256 _id,
         address _settlementAgent
-    ) internal onlyRegistrar onlyNotZeroAddress(_settlementAgent) {
+    ) internal onlyNotZeroAddress(_settlementAgent) {
         AccessControlStorage storage $ = _getAccessControlStorage();
         $.settlementAgentByTokenId[_id] = _settlementAgent;
     }
 
+    /**
+     * @dev Internal method that sets  registrar agent `_registrarAgent` for `_id` token
+     */
     function _setRegistrarAgent(
         uint256 _id,
         address _registrarAgent
-    ) internal onlyRegistrar onlyNotZeroAddress(_registrarAgent) {
+    ) internal onlyNotZeroAddress(_registrarAgent) {
         AccessControlStorage storage $ = _getAccessControlStorage();
         $.registrarAgentByTokenId[_id] = _registrarAgent;
     }
 
+    /**
+     * @dev See {PausableUpgradeable-_pause}.
+     */
     function pause() external onlyRegistrar {
         super._pause();
     }
 
+    /**
+     * @dev See {PausableUpgradeable-unpause}.
+     */
     function unpause() external onlyRegistrar {
         super._unpause();
     }

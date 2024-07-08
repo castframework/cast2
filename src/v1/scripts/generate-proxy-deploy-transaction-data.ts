@@ -21,7 +21,7 @@ async function main() {
     config.Contracts.DefaultUri,
     config.Contracts.BaseUri,
     config.Contracts.Name,
-    config.Contracts.Symbol
+    config.Contracts.Symbol,
   );
 
   console.log(`Encoded initializer call : ${implInitializerCall}`);
@@ -72,7 +72,7 @@ async function buildInitializerCall(
   defaultUri: string,
   baseUri: string,
   name: string,
-  symbol: string
+  symbol: string,
 ): Promise<string> {
   const factorySmartCoin = await ethers.getContractFactory(
     implementationArtifactName,
@@ -86,7 +86,7 @@ async function buildInitializerCall(
     defaultUri,
     baseUri,
     name,
-    symbol
+    symbol,
   ]);
 }
 

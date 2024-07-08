@@ -74,6 +74,26 @@ context('SecurityTokenV1', () => {
     it('should match the token symbol', async () =>
       await expect(await securityTokenProxy.symbol()).to.be.eq(SYMBOL));
   });
+  context('Unsupported Methods', async () => {
+    it('should not support safeBatchTransferFrom', async () =>
+      await expect(
+        securityTokenProxy.safeBatchTransferFrom(
+          receiverAddress,
+          receiverAddress,
+          [1],
+          [2],
+          '0x',
+        ),
+      ).to.be.revertedWithCustomError(securityTokenProxy, 'NotSupportedMethod'));
+    it('should not support balanceOfBatch', async () =>
+      await expect(
+        securityTokenProxy.balanceOfBatch([receiverAddress], [1]),
+      ).to.be.revertedWithCustomError(securityTokenProxy, 'NotSupportedMethod'));
+    it('should not support setApprovalForAll', async () =>
+      await expect(
+        securityTokenProxy.setApprovalForAll(receiverAddress, true),
+      ).to.be.revertedWithCustomError(securityTokenProxy, 'NotSupportedMethod'));
+  });
   context('Mint Tokens', async () => {
     it('should revert when data is missing metadataUri', async () => {
       expect(

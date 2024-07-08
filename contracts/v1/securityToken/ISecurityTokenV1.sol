@@ -49,14 +49,17 @@ interface ISecurityTokenV1 {
      * @dev Returns the version number of this contract
      */
     function version() external pure returns (string memory);
+
     /**
-     * @dev Returns the name of the token
-     */
+    * @dev Returns the version number of this contract
+    */
     function name() external view returns (string memory);
+
     /**
      * @dev Returns the symbol of the token
      */
     function symbol() external view returns (string memory);
+
     /**
      * @dev Sets the token's URI
      */

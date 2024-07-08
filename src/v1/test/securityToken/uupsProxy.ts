@@ -33,7 +33,12 @@ context('SecurityTokenV1: Proxy', () => {
     });
 
     it('should not be able to call initialize after initialization', async () => {
-      const transaction = securityTokenProxy.initialize(URI, BASE_URI, NAME, SYMBOL);
+      const transaction = securityTokenProxy.initialize(
+        URI,
+        BASE_URI,
+        NAME,
+        SYMBOL,
+      );
       await expect(transaction).to.be.revertedWithCustomError(
         securityTokenProxy,
         'InvalidInitialization',

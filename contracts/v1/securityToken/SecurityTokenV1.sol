@@ -16,17 +16,33 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
  * @dev The `SecurityToken` contract is basically an ERC1155 with a few specifics
  * It uses the UUPS upgrade mechanism
  * It has a set of operators with specific rights :
- * - the registrar operator :
- *      - manages the blacklisting of users
- *      - reviews(and either validates or rejects) transfers of tokens back to the registrar or the operations address
- *      - names the operators for next implementation contract upgrade (AccessControlUpgradeable.nameNewOperators)
- *      - authorises upgrade to next implementation contract (AccessControlUpgradeable.authorizeImplementation)
- * - the operations operator is a special address used when token owners want to 'cash out' of the SmartCoin
- * (i.e. sell their tokens to the issuer in exchange for cash) :
- *      - it is not possible to use the operations operator's address as spender or destination of a transferFrom
- *      - transfers to the operations address have to be reviewed by the registrar operator before being performed.
- * - the technical operator :
+ * - the registrar operator(for the whole contract) :
+ *      - mints tokens
+ *      - burns tokens
+ *      - force reviews(and either releases or cancels) transfers of tokens
+ *      - names the operators for next implementation contract upgrade (ERC1155AccessControlUpgradeableV1.nameNewOperators)
+ *      - authorises upgrade to next implementation contract (ERC1155AccessControlUpgradeableV1.authorizeImplementation)
+ * - the technical operator(for the whole contract):
  *      - only the technical operator can launch a (previously authorised) upgrade of the implementation contract (upgradeTo/upgradeToAndCall)
+ * - the registrar agent operator(by tokenId)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ):
+ *      - initiate a safeTransferFrom
+ *      - cancel a locked safeTransferFrom
+ * - the settlement agent operator(by tokenId):
+ *      - relase a locked safeTransfrFrom
+ * It has two types of transfer:
+ * - Direct safeTransferFrom:
+ *      - direct transfer of tokens to the receiver
+ * - Lock safeTransferFrom
+ *      - locks the tokens in the holder address by the registrar agent
+ *      - transfer could be canceled by the registrar agent or registrar (owner of the registry).
+ *      - transfer could be released by the settlement agent or registrar (owner of the registry).
+ * It has two types of mints
+ * - Mint with data that contains (Settlement agent, Regisrar agent and token URI)
+ *      - set up a registrar agent and settlement agent for the token.
+ *      - set up an URI for the token
+ *      - mints the tokens to receiver address
+ * - Mint with empty data
+ *      - mints tokens to the receiver address
  */
 //@custom:oz-upgrades
 contract SecurityTokenV1 is
@@ -52,6 +68,8 @@ contract SecurityTokenV1 is
 
     error InvalidUUIDCharacter();
     error InvalidUUIDLength();
+
+    error NotSupportedMethod();
 
     /**
      * @dev Used when "available" balance is insufficient
@@ -136,6 +154,9 @@ contract SecurityTokenV1 is
         );
         _;
     }
+    /**
+     * @dev Throws if isinCode format is invalid.
+     */
     modifier onlyIfValidIsin(string calldata isinCode) {
         bytes memory isin = bytes(isinCode);
         for (uint256 i = 0; i < isin.length; i++) {
@@ -166,38 +187,42 @@ contract SecurityTokenV1 is
     }
 
     /**
-     * @dev Returns the version number of this contract
+     * @dev Returns the name of this token
      */
-    function version() external pure virtual returns (string memory) {
-        return "V1";
-    }
-
     function name() external view returns (string memory) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         return $.name;
     }
 
+    /**
+     * @dev Returns the symbol of this token
+     */
     function symbol() external view returns (string memory) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         return $.symbol;
     }
 
+    /**
+     * @dev Sets an URI for the token `tokenId`
+     */
     function setURI(
         uint256 tokenId,
-        string memory tokenURI
-    ) external virtual onlyRegistrar {
-        super._setURI(tokenId, tokenURI);
-    }
-
-    function setBaseURI(string memory baseURI) external virtual onlyRegistrar {
-        super._setBaseURI(baseURI);
+        string calldata tokenURI
+    ) external onlyRegistrar {
+        ERC1155URIStorageUpgradeable._setURI(tokenId, tokenURI);
     }
 
     /**
-     * @dev Burns a `amount` amount of `id` tokens from the caller.
+     * @dev Sets `_baseURI` as the `_baseURI` for all tokens
+     */
+    function setBaseURI(string calldata _baseURI) external onlyRegistrar {
+        ERC1155URIStorageUpgradeable._setBaseURI(_baseURI);
+    }
+
+    /**
+     * @dev Burns a `amount` amount of `id` tokens from the account `_account`.
      * NB: only the registrar operator is allowed to burn their tokens
      */
-    // todo : either this or burn(_id, _amount) to only burn on registrar's account
     function burn(
         address _account,
         uint256 _id,
@@ -207,7 +232,8 @@ contract SecurityTokenV1 is
     }
 
     /**
-     * @dev Mints a `amount` amount of `id` tokens on `to` address
+     * @dev Mints a `_amount` amount of `_id` tokens on `_to` address
+     * NB: if `_data` data is not empty, set up a registrar agent, settlement agent and an uri for the `_id` token.
      * NB: only the registrar operator is allowed to mint new tokens
      * NB: the `_to` address has to be unfrozen
      */
@@ -215,34 +241,47 @@ contract SecurityTokenV1 is
         address _to,
         uint256 _id,
         uint256 _amount,
-        bytes calldata data
+        bytes calldata _data
     ) external onlyRegistrar returns (bool) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-        if (data.length != 0) {
+        if (_data.length != 0) {
             require(!$.minted[_id], TokenAlreadyMinted(_id));
-            MintData memory mintData = abi.decode(data, (MintData));
+            MintData memory mintData = abi.decode(_data, (MintData));
             _setRegistrarAgent(_id, mintData.registrarAgent);
             _setSettlementAgent(_id, mintData.settlementAgent);
+            ERC1155URIStorageUpgradeable._setURI(_id, mintData.metadataUri);
             $.minted[_id] = true;
         } else {
             require($.minted[_id], TokenNotAlreadyMinted(_id));
         }
-        super._mint(_to, _id, _amount, data);
+        super._mint(_to, _id, _amount, _data);
         return true;
     }
 
+    /**
+     * @dev Actually performs the transfer request corresponding to the given `_transactionId`
+     * Called by the settlement agent operator
+     */
     function releaseTransaction(
         string calldata _transactionId
     ) external onlySettlementAgent(_transactionId) returns (bool) {
         return _releaseTransaction(_transactionId);
     }
 
+    /**
+     * @dev Cancels the transfer request corresponding to the given `_transactionId`
+     * Called by the registrar agent operator
+     */
     function cancelTransaction(
         string calldata _transactionId
     ) external onlyTransactionRegistrarAgent(_transactionId) returns (bool) {
         return _cancelTransaction(_transactionId);
     }
 
+    /**
+     * @dev Actually performs the transfer request corresponding to the given `_transactionId`
+     * Called by the registrar operator
+     */
     function forceReleaseTransaction(
         string calldata _transactionId
     ) external onlyRegistrar returns (bool) {
@@ -250,6 +289,10 @@ contract SecurityTokenV1 is
         return _releaseTransaction(_transactionId);
     }
 
+    /**
+     * @dev Cancels the transfer request corresponding to the given `_transactionId`
+     * Called by the registrar operator
+     */
     function forceCancelTransaction(
         string calldata _transactionId
     ) external onlyRegistrar returns (bool) {
@@ -257,15 +300,24 @@ contract SecurityTokenV1 is
         return _cancelTransaction(_transactionId);
     }
 
+    /**
+     * @dev Returns the tokenId as number from an `isinCode` isin.
+     */
     function getTokenIdByIsin(
-        string calldata isinCode
-    ) external pure onlyIfValidIsin(isinCode) returns (uint256) {
-        return uint96(bytes12(_toUpper(isinCode)));
+        string calldata _isinCode
+    ) external pure onlyIfValidIsin(_isinCode) returns (uint256) {
+        return uint96(bytes12(_toUpper(_isinCode)));
+    }
+    /**
+     * @dev Returns the contract version.
+     */
+    function version() external virtual pure override returns (string memory) {
+        return "V1";
     }
 
     function upgradeToAndCall(
         address _newImplementation,
-        bytes memory data
+        bytes memory _data
     )
         public
         payable
@@ -274,12 +326,12 @@ contract SecurityTokenV1 is
         onlyProxy
         consumeAuthorizeImplementation(_newImplementation)
     {
-        super.upgradeToAndCall(_newImplementation, data);
+        super.upgradeToAndCall(_newImplementation, _data);
         _resetNewOperators();
     }
 
     /**
-     * @dev UUPS initializer that initializes the token's name and symbol
+     * @dev UUPS initializer that initializes the token's name, symbol, uri and baseUri
      */
     function initialize(
         string memory _uri,
@@ -298,7 +350,12 @@ contract SecurityTokenV1 is
     }
 
     /**
-     * @dev See {IERC1155-safeTransferFrom}.
+     * @dev Same semantic as ERC1155's safeTransferFrom function although there are 3 cases :
+     * 1- if the type of transfer is a Direct Transfer then the transfer will occur right away
+     * 2- if the type of transfer is Lock Transfer then the transfer will only actually occur once validated by the registrar agent operator
+     * using the releaseTransaction method or by the registrar operator(owner of the registry) via forceReleaseTransaction
+     * 3- if the type of Transfer is unknown then the transfer will be rejected
+     * NB: only the registrar agent of the `_id` token could perform a safeTransferFrom
      */
     function safeTransferFrom(
         address _from,
@@ -347,12 +404,49 @@ contract SecurityTokenV1 is
         }
     }
 
+    /**
+     * @dev See {IERC1155-safeBatchTransferFrom}.
+     */
+    function safeBatchTransferFrom(
+        address from,
+        address to,
+        uint256[] memory ids,
+        uint256[] memory values,
+        bytes memory data
+    ) public override virtual {
+        revert NotSupportedMethod();
+    }
+
+    /**
+     * @dev See {IERC1155-balanceOfBatch}.
+     */
+    function balanceOfBatch(
+        address[] memory accounts,
+        uint256[] memory ids
+    ) public view override virtual returns (uint256[] memory) {
+        revert NotSupportedMethod();
+    }
+
+    /**
+     * @dev See {IERC1155-setApprovalForAll}.
+     */
+    function setApprovalForAll(address operator, bool approved) public override virtual {
+        revert NotSupportedMethod();
+    }
+
+    /**
+     * @dev See {ERC1155URIStorageUpgradeable-uri}.
+     */
     function uri(
         uint256 _id
     )
         public
         view
-        override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable, ISecurityTokenV1)
+        override(
+            ERC1155Upgradeable,
+            ERC1155URIStorageUpgradeable,
+            ISecurityTokenV1
+        )
         returns (string memory)
     {
         return ERC1155URIStorageUpgradeable.uri(_id);
@@ -361,12 +455,17 @@ contract SecurityTokenV1 is
     /**
      * @dev Returns the balance of `addr` account for `id` token.
      * NB: The returned balance is the "available" balance, which excludes tokens engaged in a transaction
-     * (i.e. a transfer back to the registrar operator or the operations operator)
+     * (i.e. a safeTransferFrom of type `Lock`)
      */
     function balanceOf(
         address _addr,
         uint256 _id
-    ) public view override(ERC1155Upgradeable, ISecurityTokenV1) returns (uint256) {
+    )
+        public
+        view
+        override(ERC1155Upgradeable, ISecurityTokenV1)
+        returns (uint256)
+    {
         return _availableBalance(_addr, _id);
     }
 
@@ -381,6 +480,9 @@ contract SecurityTokenV1 is
         return $.engagedAmount[_id][_addr];
     }
 
+    /**
+     * @dev See {IERC1155-_update}.
+     */
     function _update(
         address from,
         address to,
@@ -415,6 +517,12 @@ contract SecurityTokenV1 is
         }
     }
 
+    /**
+     * @dev Private method cancelling a lock transfer.
+     * disengages the engaged amount
+     * cancels the transfer for the given `_transactionId` transactionId
+     * and emits a corresponding `LockUpdated` event
+     */
     function _cancelTransaction(
         string calldata _transactionId
     ) private returns (bool) {
@@ -442,6 +550,12 @@ contract SecurityTokenV1 is
         return true;
     }
 
+    /**
+     * @dev Private method releasing a lock transfer.
+     * disengages the engaged amount
+     * proceeds the transfer for the given `_transactionId` transactionId
+     * and emits a corresponding `LockUpdated` event
+     */
     function _releaseTransaction(
         string calldata _transactionId
     ) private returns (bool) {
@@ -465,7 +579,6 @@ contract SecurityTokenV1 is
             transferRequest.value,
             ""
         );
-
         emit LockUpdated(
             _transactionId,
             _msgSender(),
@@ -477,30 +590,42 @@ contract SecurityTokenV1 is
         return true;
     }
 
+    /**
+     * @dev Returns whether the kind `_kind` is a direct transfer
+     */
     function _isDirectTransfer(string memory kind) private pure returns (bool) {
         return _compareStr(kind, TRANFER_TYPE_DIRECT);
     }
 
-    function _isLockTransfer(string memory kind) private pure returns (bool) {
-        return _compareStr(kind, TRANFER_TYPE_LOCK);
+    /**
+     * @dev Returns whether the kind `_kind` is a lock transfer
+     */
+    function _isLockTransfer(string memory _kind) private pure returns (bool) {
+        return _compareStr(_kind, TRANFER_TYPE_LOCK);
     }
 
+    /**
+     * @dev Returns whether the strings `_str1` and `_str2` are equivalent
+     */
     function _compareStr(
-        string memory str1,
-        string memory str2
+        string memory _str1,
+        string memory _str2
     ) private pure returns (bool) {
-        if (bytes(str1).length != bytes(str2).length) {
+        if (bytes(_str1).length != bytes(_str2).length) {
             return false;
         }
         return
-            keccak256(abi.encodePacked(str1)) ==
-            keccak256(abi.encodePacked(str2));
+            keccak256(abi.encodePacked(_str1)) ==
+            keccak256(abi.encodePacked(_str2));
     }
 
+    /**
+     * @dev Returns the string `_isinCode` in uppercase
+     */
     function _toUpper(
-        string memory isinCode
+        string memory _isinCode
     ) private pure returns (bytes memory) {
-        bytes memory isin = bytes(isinCode);
+        bytes memory isin = bytes(_isinCode);
         for (uint256 i = 0; i < isin.length; i++) {
             if (isin[i] >= 0x61 && isin[i] <= 0x7A) {
                 isin[i] = bytes1(uint8(isin[i]) - 32);
@@ -509,8 +634,11 @@ contract SecurityTokenV1 is
         return isin;
     }
 
-    function checkUUIDValidity(string memory str) private pure {
-        bytes memory maybeUUID = bytes(str);
+    /**
+     * @dev Returns whether the string `_str` is a valid miniscule UUID format
+     */
+    function checkUUIDValidity(string memory _str) private pure {
+        bytes memory maybeUUID = bytes(_str);
         require(bytes(maybeUUID).length == 36, InvalidUUIDLength());
         for (uint256 i = 0; i < 8; i++) {
             require(isValidUUIDCharacter(maybeUUID[i]), InvalidUUIDCharacter());
@@ -533,9 +661,14 @@ contract SecurityTokenV1 is
         }
     }
 
-    function isValidUUIDCharacter(bytes1 character) private pure returns (bool) {
+    /**
+     * @dev Returns whether the the character `_character`` is number or in [a-f]
+     */
+    function isValidUUIDCharacter(
+        bytes1 _character
+    ) private pure returns (bool) {
         return
-            (character >= 0x30 && character <= 0x39) ||
-            (character >= 0x61 && character <= 0x66);
+            (_character >= 0x30 && _character <= 0x39) ||
+            (_character >= 0x61 && _character <= 0x66);
     }
 }

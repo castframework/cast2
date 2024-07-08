@@ -49,7 +49,7 @@ subtask(
       };
     }
 
-    // since we only want to override the compiler for version 0.8.24,
+    // since we only want to override the compiler for version 0.8.26,
     // the runSuper function allows us to call the default subtask.
     return runSuper();
   }

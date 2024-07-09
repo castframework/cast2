@@ -313,7 +313,7 @@ contract SecurityTokenV1 is
      * 2- if the type of transfer is Lock Transfer then the transfer will only actually occur once validated by the settlement agent operator
      * using the releaseTransaction method or by the registrar operator(owner of the registry) via forceReleaseTransaction
      * 3- if the type of Transfer is unknown then the transfer will be rejected
-     * NB: only the registrar could perform a safeTransferFrom
+     * NB: only the registrar could perform a forceSafeTransferFrom
      */
     function forceSafeTransferFrom(
         address _from,

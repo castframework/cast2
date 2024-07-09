@@ -37,6 +37,17 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
         0x5b3fd8164fa8df3212fc3e89c5a3ef922df6e80e7134203b2d3bcd6145be3400;
 
     /**
+     * @dev Current registrar operator's address
+     */
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    address public immutable registrar;
+    /**
+     * @dev Current technical operator's address
+     */
+    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+    address public immutable technical;
+
+    /**
      * @dev Used when a method reserved to the registrar operator is called by some other address
      */
     error UnauthorizedRegistrar();
@@ -80,27 +91,6 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
      * @dev Used when a method reserved to the settlement agent is called by some other address
      */
     error UnauthorizedSettlementAgent(uint256 id);
-
-    function _getAccessControlStorage()
-        private
-        pure
-        returns (AccessControlStorage storage $)
-    {
-        assembly {
-            $.slot := AccessControlStorageLocation
-        }
-    }
-
-    /**
-     * @dev Current registrar operator's address
-     */
-    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    address public immutable registrar;
-    /**
-     * @dev Current technical operator's address
-     */
-    /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
-    address public immutable technical;
 
     /**
      * @dev Throws if called by any account other than the registrar.
@@ -204,29 +194,6 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
     }
 
     /**
-     * @dev Returns the contract's operators' addresses
-     */
-    function getOperators() external view returns (address, address) {
-        return (registrar, technical);
-    }
-
-    /**
-     * @dev Returns the token's settlement agent
-     */
-    function getSettlementAgent(uint256 _id) public view returns (address) {
-        AccessControlStorage storage $ = _getAccessControlStorage();
-        return $.settlementAgentByTokenId[_id];
-    }
-
-    /**
-     * @dev Returns the token's registrar agent
-     */
-    function getRegistrarAgent(uint256 _id) public view returns (address) {
-        AccessControlStorage storage $ = _getAccessControlStorage();
-        return $.registrarAgentByTokenId[_id];
-    }
-
-    /**
      * @dev Name the operators for the next implementation
      * and emits a corresponding `NamedNewOperators` event
      * The operators will have to accept their future roles before the update to the new implementation can take place
@@ -325,6 +292,44 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
     {
         _setRegistrarAgent(_id, _registrarAgent);
     }
+
+    /**
+     * @dev See {PausableUpgradeable-_pause}.
+     */
+    function pause() external onlyRegistrar {
+        super._pause();
+    }
+
+    /**
+     * @dev See {PausableUpgradeable-unpause}.
+     */
+    function unpause() external onlyRegistrar {
+        super._unpause();
+    }
+
+    /**
+     * @dev Returns the contract's operators' addresses
+     */
+    function getOperators() external view returns (address, address) {
+        return (registrar, technical);
+    }
+
+    /**
+     * @dev Returns the token's settlement agent
+     */
+    function getSettlementAgent(uint256 _id) public view returns (address) {
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        return $.settlementAgentByTokenId[_id];
+    }
+
+    /**
+     * @dev Returns the token's registrar agent
+     */
+    function getRegistrarAgent(uint256 _id) public view returns (address) {
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        return $.registrarAgentByTokenId[_id];
+    }
+
     /**
      * @dev Internal method that sets  settlement agent `_settlementAgent` for `_id` token
      */
@@ -348,6 +353,7 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
         $.hasAcceptedRole[$.newRegistrar] = false;
         $.hasAcceptedRole[$.newTechnical] = false;
     }
+
     /**
      * @dev Internal method that sets  registrar agent `_registrarAgent` for `_id` token
      */
@@ -359,20 +365,6 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
         $.registrarAgentByTokenId[_id] = _registrarAgent;
     }
 
-    /**
-     * @dev See {PausableUpgradeable-_pause}.
-     */
-    function pause() external onlyRegistrar {
-        super._pause();
-    }
-
-    /**
-     * @dev See {PausableUpgradeable-unpause}.
-     */
-    function unpause() external onlyRegistrar {
-        super._unpause();
-    }
-
     function _update(
         address from,
         address to,
@@ -380,5 +372,15 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
         uint256[] memory values
     ) internal virtual override(ERC1155PausableUpgradeable) {
         super._update(from, to, ids, values);
+    }
+
+    function _getAccessControlStorage()
+        private
+        pure
+        returns (AccessControlStorage storage $)
+    {
+        assembly {
+            $.slot := AccessControlStorageLocation
+        }
     }
 }

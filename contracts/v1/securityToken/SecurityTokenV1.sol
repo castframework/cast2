@@ -97,17 +97,6 @@ contract SecurityTokenV1 is
      * @dev Used when token has not already been minted in the past
      */
     error TokenNotAlreadyMinted(uint256 id);
-
-    function _getSecurityTokenStorage()
-        private
-        pure
-        returns (SecurityTokenStorage storage $)
-    {
-        assembly {
-            $.slot := SecurityTokenStorageLocation
-        }
-    }
-
     /**
      * @dev Performs balance checks based on the "available" balance instead of total balance
      * The "available" balance excludes tokens currently engaged in a transfer request,
@@ -187,19 +176,22 @@ contract SecurityTokenV1 is
     }
 
     /**
-     * @dev Returns the name of this token
+     * @dev UUPS initializer that initializes the token's name, symbol, uri and baseUri
      */
-    function name() external view returns (string memory) {
-        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-        return $.name;
-    }
+    function initialize(
+        string memory _uri,
+        string memory _baseUri,
+        string memory _name,
+        string memory _symbol
+    ) public initializer {
+        __ERC1155_init(_uri);
+        __ERC1155URIStorage_init();
+        _setBaseURI(_baseUri);
+        __UUPSUpgradeable_init();
 
-    /**
-     * @dev Returns the symbol of this token
-     */
-    function symbol() external view returns (string memory) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-        return $.symbol;
+        $.name = _name;
+        $.symbol = _symbol;
     }
 
     /**
@@ -316,6 +308,39 @@ contract SecurityTokenV1 is
         return _cancelTransaction(_transactionId);
     }
 
+    /** @dev Same semantic as ERC1155's safeTransferFrom function although there are 3 cases :
+     * 1- if the type of transfer is a Direct Transfer then the transfer will occur right away
+     * 2- if the type of transfer is Lock Transfer then the transfer will only actually occur once validated by the settlement agent operator
+     * using the releaseTransaction method or by the registrar operator(owner of the registry) via forceReleaseTransaction
+     * 3- if the type of Transfer is unknown then the transfer will be rejected
+     * NB: only the registrar could perform a safeTransferFrom
+     */
+    function forceSafeTransferFrom(
+        address _from,
+        address _to,
+        uint256 _id,
+        uint256 _value,
+        bytes memory _data
+    ) external whenNotPaused onlyRegistrar {
+        _internalSafeTransferFrom(_from, _to, _id, _value, _data);
+    }
+
+    /**
+     * @dev Returns the name of this token
+     */
+    function name() external view returns (string memory) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        return $.name;
+    }
+
+    /**
+     * @dev Returns the symbol of this token
+     */
+    function symbol() external view returns (string memory) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        return $.symbol;
+    }
+
     /**
      * @dev Returns the tokenId as number from an `_isinCode`.
      */
@@ -330,6 +355,28 @@ contract SecurityTokenV1 is
      */
     function version() external pure virtual override returns (string memory) {
         return "V1";
+    }
+
+    /** @dev Same semantic as ERC1155's safeTransferFrom function although there are 3 cases :
+     * 1- if the type of transfer is a Direct Transfer then the transfer will occur right away
+     * 2- if the type of transfer is Lock Transfer then the transfer will only actually occur once validated by the settlement agent operator
+     * using the releaseTransaction method or by the registrar operator(owner of the registry) via forceReleaseTransaction
+     * 3- if the type of Transfer is unknown then the transfer will be rejected
+     * NB: only the registrar agent of the `_id` token  could perform a safeTransferFrom
+     */
+    function safeTransferFrom(
+        address _from,
+        address _to,
+        uint256 _id,
+        uint256 _value,
+        bytes memory _data
+    )
+        public
+        override(ERC1155Upgradeable, IERC1155)
+        whenNotPaused
+        onlyRegistrarAgent(_id)
+    {
+        _internalSafeTransferFrom(_from, _to, _id, _value, _data);
     }
 
     function upgradeToAndCall(
@@ -348,45 +395,19 @@ contract SecurityTokenV1 is
     }
 
     /**
-     * @dev UUPS initializer that initializes the token's name, symbol, uri and baseUri
-     */
-    function initialize(
-        string memory _uri,
-        string memory _baseUri,
-        string memory _name,
-        string memory _symbol
-    ) public initializer {
-        __ERC1155_init(_uri);
-        __ERC1155URIStorage_init();
-        _setBaseURI(_baseUri);
-        __UUPSUpgradeable_init();
-
-        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-        $.name = _name;
-        $.symbol = _symbol;
-    }
-
-    /**
      * @dev Same semantic as ERC1155's safeTransferFrom function although there are 3 cases :
      * 1- if the type of transfer is a Direct Transfer then the transfer will occur right away
      * 2- if the type of transfer is Lock Transfer then the transfer will only actually occur once validated by the settlement agent operator
      * using the releaseTransaction method or by the registrar operator(owner of the registry) via forceReleaseTransaction
      * 3- if the type of Transfer is unknown then the transfer will be rejected
-     * NB: only the registrar agent of the `_id` token could perform a safeTransferFrom
      */
-    function safeTransferFrom(
+    function _internalSafeTransferFrom(
         address _from,
         address _to,
         uint256 _id,
         uint256 _value,
         bytes memory _data
-    )
-        public
-        override(ERC1155Upgradeable, IERC1155)
-        whenNotPaused
-        onlyRegistrarAgent(_id)
-        onlyWhenBalanceAvailable(_from, _id, _value)
-    {
+    ) private onlyWhenBalanceAvailable(_from, _id, _value) {
         require(_data.length > 0, DataTransferEmpty());
         TransferData memory transferData = abi.decode(_data, (TransferData));
         if (_isLockTransfer(transferData.kind)) {
@@ -688,5 +709,15 @@ contract SecurityTokenV1 is
         return
             (_character >= 0x30 && _character <= 0x39) ||
             (_character >= 0x61 && _character <= 0x66);
+    }
+
+    function _getSecurityTokenStorage()
+        private
+        pure
+        returns (SecurityTokenStorage storage $)
+    {
+        assembly {
+            $.slot := SecurityTokenStorageLocation
+        }
     }
 }

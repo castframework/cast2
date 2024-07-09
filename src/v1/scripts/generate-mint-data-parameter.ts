@@ -10,16 +10,13 @@ async function main() {
 
   console.log('Used config', config);
 
-  const outputFile = path.join(
-    config.OutputFolder,
-    'mint-data-field.json',
-  );
+  const outputFile = path.join(config.OutputFolder, 'mint-data-field.json');
 
   const newMintData = generateDataForMint(
-        config.RegistrarAgentAddress,
-        config.SettlerAgentAddress,
-        config.MetadataUri
-    );
+    config.RegistrarAgentAddress,
+    config.SettlerAgentAddress,
+    config.MetadataUri,
+  );
 
   console.log(`Generated data field :\n${newMintData}`);
 
@@ -40,15 +37,19 @@ async function main() {
   );
 }
 
-function generateDataForMint(registrarAgent: string, settlementAgent: string, metadataUri: string){
-    var AbiCoder = new ethers.AbiCoder();
+function generateDataForMint(
+  registrarAgent: string,
+  settlementAgent: string,
+  metadataUri: string,
+) {
+  var AbiCoder = new ethers.AbiCoder();
 
-    return AbiCoder.encode(
-        [
-          'tuple(address registrarAgent, address settlementAgent, string metadataUri) mintData',
-        ],
-        [{ registrarAgent, settlementAgent, metadataUri }],
-      );
+  return AbiCoder.encode(
+    [
+      'tuple(address registrarAgent, address settlementAgent, string metadataUri) mintData',
+    ],
+    [{ registrarAgent, settlementAgent, metadataUri }],
+  );
 }
 
 main().catch((error) => {

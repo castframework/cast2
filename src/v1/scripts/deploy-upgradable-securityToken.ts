@@ -18,7 +18,7 @@ async function main() {
         config.Contracts.DefaultUri,
         config.Contracts.BaseUri,
         config.Contracts.Name,
-        config.Contracts.Symbol
+        config.Contracts.Symbol,
       ],
       {
         kind: 'uups',

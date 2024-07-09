@@ -87,7 +87,7 @@ context('SecurityTokenV1', () => {
       ).to.be.revertedWithCustomError(securityTokenProxy, 'UnsupportedMethod'));
     it('should not support isApprovedForAll', async () =>
       await expect(
-        securityTokenProxy.isApprovedForAll(receiverAddress, receiverAddress)
+        securityTokenProxy.isApprovedForAll(receiverAddress, receiverAddress),
       ).to.be.revertedWithCustomError(securityTokenProxy, 'UnsupportedMethod'));
     it('should not support setApprovalForAll', async () =>
       await expect(
@@ -286,6 +286,21 @@ context('SecurityTokenV1', () => {
           'UnauthorizedRegistrarAgent',
         )
         .withArgs(tokenId);
+    });
+    it("only token's registrar could make a force transfer", async () => {
+      const safeTransfer = securityTokenProxy
+        .connect(signers.investor1)
+        .forceSafeTransferFrom(
+          receiverAddress,
+          settlementAgentAddress,
+          tokenId,
+          transferAmount,
+          data,
+        );
+      await expect(safeTransfer).to.be.revertedWithCustomError(
+        securityTokenProxy,
+        'UnauthorizedRegistrar',
+      );
     });
     it('should revert with unsupported tranfer type', async () => {
       transferData = { kind: TransferKind.UNDEFINED, transactionId };
@@ -716,7 +731,57 @@ context('SecurityTokenV1', () => {
           Number(await securityTokenProxy.balanceOf(receiverAddress, tokenId)),
           (amount - transferAmount).toString(),
         );
-        const balanceOfBatchResult = await securityTokenProxy.balanceOfBatch([receiverAddress], [tokenId]);
+        const balanceOfBatchResult = await securityTokenProxy.balanceOfBatch(
+          [receiverAddress],
+          [tokenId],
+        );
+        await expect(
+          Number(balanceOfBatchResult[0]),
+          (amount - transferAmount).toString(),
+        );
+        await expect(
+          await securityTokenProxy.balanceOf(settlementAgentAddress, tokenId),
+          '0',
+        );
+        await securityTokenProxy
+          .connect(signers.settlementAgent)
+          .releaseTransaction(transactionId);
+        await expect(
+          Number(await securityTokenProxy.balanceOf(receiverAddress, tokenId)),
+          (amount - transferAmount).toString(),
+        );
+        await expect(
+          await securityTokenProxy.balanceOf(settlementAgentAddress, tokenId),
+          transferAmount.toString(),
+        );
+      });
+      it('should to be able to make forceSafeTransferFrom by the registrar', async () => {
+        const transactionId = randomUUID();
+        transferData = {
+          kind: TransferKind.LOCK,
+          transactionId: transactionId,
+        };
+        const data = AbiCoder.encode(
+          ['tuple(string kind, string transactionId) transferData'],
+          [transferData],
+        );
+        await securityTokenProxy
+          .connect(signers.registrar)
+          .forceSafeTransferFrom(
+            receiverAddress,
+            settlementAgentAddress,
+            tokenId,
+            transferAmount,
+            data,
+          );
+        await expect(
+          Number(await securityTokenProxy.balanceOf(receiverAddress, tokenId)),
+          (amount - transferAmount).toString(),
+        );
+        const balanceOfBatchResult = await securityTokenProxy.balanceOfBatch(
+          [receiverAddress],
+          [tokenId],
+        );
         await expect(
           Number(balanceOfBatchResult[0]),
           (amount - transferAmount).toString(),

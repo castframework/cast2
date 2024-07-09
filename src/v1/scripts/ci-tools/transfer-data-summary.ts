@@ -1,6 +1,9 @@
 import path from 'path';
 import process from 'process';
-import { GetTransferDataConfig, TransferDataConfig } from '../configuration/transfer-data-config';
+import {
+  GetTransferDataConfig,
+  TransferDataConfig,
+} from '../configuration/transfer-data-config';
 
 const config = GetTransferDataConfig();
 

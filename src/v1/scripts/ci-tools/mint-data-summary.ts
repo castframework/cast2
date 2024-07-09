@@ -4,7 +4,10 @@ import {
   GetNewSecurityTokenProxyConfig,
   NewSecurityTokenProxyConfig,
 } from '../configuration/new-security-token-proxy-config';
-import { GetMintDataConfig, MintDataConfig } from '../configuration/mint-data-config';
+import {
+  GetMintDataConfig,
+  MintDataConfig,
+} from '../configuration/mint-data-config';
 
 const config = GetMintDataConfig();
 

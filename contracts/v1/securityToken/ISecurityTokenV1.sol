@@ -80,6 +80,21 @@ interface ISecurityTokenV1 is IERC1155 {
         string calldata _transactionId
     ) external returns (bool);
 
+    /** @dev Same semantic as ERC1155's safeTransferFrom function although there are 3 cases :
+     * 1- if the type of transfer is a Direct Transfer then the transfer will occur right away
+     * 2- if the type of transfer is Lock Transfer then the transfer will only actually occur once validated by the settlement agent operator
+     * using the releaseTransaction method or by the registrar operator(owner of the registry) via forceReleaseTransaction
+     * 3- if the type of Transfer is unknown then the transfer will be rejected
+     * NB: only the registrar could perform a forceSafeTransferFrom
+     */
+    function forceSafeTransferFrom(
+        address _from,
+        address _to,
+        uint256 _id,
+        uint256 _value,
+        bytes memory _data
+    ) external;
+
     /**
      * @dev Returns the name of the token
      */
@@ -102,7 +117,7 @@ interface ISecurityTokenV1 is IERC1155 {
      * @dev Returns the version number of this contract
      */
     function version() external pure returns (string memory);
-    
+
     /**
      * @dev Returns the tokenId as number from an `_isinCode`.
      */

@@ -11,15 +11,12 @@ async function main() {
 
   console.log('Used config', config);
 
-  const outputFile = path.join(
-    config.OutputFolder,
-    'transfer-data-field.json',
-  );
+  const outputFile = path.join(config.OutputFolder, 'transfer-data-field.json');
 
   const newTransferData = generateDataForTransfer(
-        config.TransferKind,
-        config.TransactionId,
-    );
+    config.TransferKind,
+    config.TransactionId,
+  );
 
   console.log(`Generated data field :\n${newTransferData}`);
 
@@ -40,27 +37,25 @@ async function main() {
   );
 }
 
-function generateDataForTransfer(transferKind: TransferKind, transactionId?: string){
-    var AbiCoder = new ethers.AbiCoder();
+function generateDataForTransfer(
+  transferKind: TransferKind,
+  transactionId?: string,
+) {
+  var AbiCoder = new ethers.AbiCoder();
 
-    if(transferKind === TransferKind.LOCK){
-      
-      return AbiCoder.encode(
-          [
-            'tuple(string kind, string transactionId) transferData',
-          ],
-          [{ kind: transferKind, transactionId }],
-        );
-      }
+  if (transferKind === TransferKind.LOCK) {
+    return AbiCoder.encode(
+      ['tuple(string kind, string transactionId) transferData'],
+      [{ kind: transferKind, transactionId }],
+    );
+  }
 
-    if(transferKind === TransferKind.DIRECT){
-      return AbiCoder.encode(
-        [
-          'tuple(string kind) transferData',
-        ],
-        [{ kind: transferKind }],
-      );
-    }
+  if (transferKind === TransferKind.DIRECT) {
+    return AbiCoder.encode(
+      ['tuple(string kind) transferData'],
+      [{ kind: transferKind }],
+    );
+  }
 }
 
 main().catch((error) => {

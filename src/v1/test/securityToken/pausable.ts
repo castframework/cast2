@@ -118,6 +118,12 @@ context('SecurityTokenV1 Pausable', () => {
           .connect(signers.registrar)
           .safeTransferFrom(ZERO_ADDRESS, ZERO_ADDRESS, 1, 1, '0x'),
       ).to.be.revertedWithCustomError(securityToken, 'EnforcedPause'));
+    it('should call forceSafeTransferFrom only when contract not paused', async () =>
+      await expect(
+        securityToken
+          .connect(signers.registrar)
+          .forceSafeTransferFrom(ZERO_ADDRESS, ZERO_ADDRESS, 1, 1, '0x'),
+      ).to.be.revertedWithCustomError(securityToken, 'EnforcedPause'));
     it('should call cancelTransaction only when contract not paused', async () =>
       await expect(
         securityToken.connect(signers.registrar).cancelTransaction('0x'),

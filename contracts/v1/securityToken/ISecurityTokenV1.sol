@@ -11,8 +11,10 @@ interface ISecurityTokenV1 is IERC1155 {
         Validated,
         Rejected
     }
-
     struct TransferData {
+        string kind;
+    }
+    struct LockTransferData {
         string kind;
         string transactionId;
     }

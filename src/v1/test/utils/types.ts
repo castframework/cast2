@@ -5,6 +5,9 @@ export type MintData = {
 };
 export type TransferData = {
   kind: string;
+};
+export type LockTransferData = {
+  kind: string;
   transactionId: string;
 };
 export enum TransferKind {

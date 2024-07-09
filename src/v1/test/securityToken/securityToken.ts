@@ -7,6 +7,7 @@ import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 import '@nomicfoundation/hardhat-chai-matchers'; //Added for revertWithCustomErrors
 import {
+  LockTransferData,
   MintData,
   TransferData,
   TransferKind,
@@ -262,13 +263,13 @@ context('SecurityTokenV1', () => {
     });
   });
   context('Safe Transfer Tokens', async () => {
-    let transferData: TransferData;
+    let lockTransferData: LockTransferData;
     let transferAmount: number = 1;
     const transactionId = randomUUID();
-    transferData = { kind: TransferKind.LOCK, transactionId };
+    lockTransferData = { kind: TransferKind.LOCK, transactionId};
     const data = AbiCoder.encode(
-      ['tuple(string kind, string transactionId) transferData'],
-      [transferData],
+      ['tuple(string kind, string transactionId) lockTransferData'],
+      [lockTransferData],
     );
     it("only token's registrar agent could make a transfer", async () => {
       const safeTransfer = securityTokenProxy
@@ -303,10 +304,10 @@ context('SecurityTokenV1', () => {
       );
     });
     it('should revert with unsupported tranfer type', async () => {
-      transferData = { kind: TransferKind.UNDEFINED, transactionId };
+      lockTransferData = { kind: TransferKind.UNDEFINED, transactionId };
       const data = AbiCoder.encode(
-        ['tuple(string kind, string transactionId) transferData'],
-        [transferData],
+        ['tuple(string kind, string transactionId) lockTransferData'],
+        [lockTransferData],
       );
       const safeTransfer = securityTokenProxy
         .connect(signers.registrarAgent)
@@ -470,13 +471,13 @@ context('SecurityTokenV1', () => {
       context('UpperCaseUUID', async () => {
         const uppercaseUUID = randomUUID().toUpperCase();
         it('could not initiate a safeTransferFrom with uppercase transactionId', async () => {
-          transferData = {
+          lockTransferData = {
             kind: TransferKind.LOCK,
             transactionId: uppercaseUUID,
           };
           const data = AbiCoder.encode(
-            ['tuple(string kind, string transactionId) transferData'],
-            [transferData],
+            ['tuple(string kind, string transactionId) lockTransferData'],
+            [lockTransferData],
           );
           const securityTokenProxyTx = securityTokenProxy
             .connect(signers.registrarAgent)
@@ -532,13 +533,13 @@ context('SecurityTokenV1', () => {
       context('Invalid UUID Length', async () => {
         const truncatedUUID = randomUUID().substring(0, 8);
         it('could not initiate a safeTransferFrom with invalid transactionId', async () => {
-          transferData = {
+          lockTransferData = {
             kind: TransferKind.LOCK,
             transactionId: truncatedUUID,
           };
           const data = AbiCoder.encode(
-            ['tuple(string kind, string transactionId) transferData'],
-            [transferData],
+            ['tuple(string kind, string transactionId) lockTransferData'],
+            [lockTransferData],
           );
           const securityTokenProxyTx = securityTokenProxy
             .connect(signers.registrarAgent)
@@ -678,10 +679,10 @@ context('SecurityTokenV1', () => {
           );
       });
       it('should fail when transactionId already exist', async () => {
-        transferData = { kind: TransferKind.LOCK, transactionId };
+        lockTransferData = { kind: TransferKind.LOCK, transactionId };
         const data = AbiCoder.encode(
-          ['tuple(string kind, string transactionId) transferData'],
-          [transferData],
+          ['tuple(string kind, string transactionId) lockTransferData'],
+          [lockTransferData],
         );
         await securityTokenProxy
           .connect(signers.registrarAgent)
@@ -710,13 +711,13 @@ context('SecurityTokenV1', () => {
       });
       it('should to be able to make lock transfer', async () => {
         const transactionId = randomUUID();
-        transferData = {
+        lockTransferData = {
           kind: TransferKind.LOCK,
           transactionId: transactionId,
         };
         const data = AbiCoder.encode(
-          ['tuple(string kind, string transactionId) transferData'],
-          [transferData],
+          ['tuple(string kind, string transactionId) lockTransferData'],
+          [lockTransferData],
         );
         await securityTokenProxy
           .connect(signers.registrarAgent)
@@ -757,13 +758,13 @@ context('SecurityTokenV1', () => {
       });
       it('should to be able to make forceSafeTransferFrom by the registrar', async () => {
         const transactionId = randomUUID();
-        transferData = {
+        lockTransferData = {
           kind: TransferKind.LOCK,
           transactionId: transactionId,
         };
         const data = AbiCoder.encode(
-          ['tuple(string kind, string transactionId) transferData'],
-          [transferData],
+          ['tuple(string kind, string transactionId) lockTransferData'],
+          [lockTransferData],
         );
         await securityTokenProxy
           .connect(signers.registrar)
@@ -804,13 +805,13 @@ context('SecurityTokenV1', () => {
       });
       it('should emit lock updated event', async () => {
         const transactionId = randomUUID();
-        transferData = {
+        lockTransferData = {
           kind: TransferKind.LOCK,
           transactionId: transactionId,
         };
         const data = AbiCoder.encode(
-          ['tuple(string kind, string transactionId) transferData'],
-          [transferData],
+          ['tuple(string kind, string transactionId) lockTransferData'],
+          [lockTransferData],
         );
         await securityTokenProxy
           .connect(signers.registrarAgent)
@@ -838,13 +839,13 @@ context('SecurityTokenV1', () => {
       });
       it('should to be able to force release transaction by registrar', async () => {
         const transactionId = randomUUID();
-        transferData = {
+        lockTransferData = {
           kind: TransferKind.LOCK,
           transactionId: transactionId,
         };
         const data = AbiCoder.encode(
-          ['tuple(string kind, string transactionId) transferData'],
-          [transferData],
+          ['tuple(string kind, string transactionId) lockTransferData'],
+          [lockTransferData],
         );
         await securityTokenProxy
           .connect(signers.registrarAgent)
@@ -869,13 +870,13 @@ context('SecurityTokenV1', () => {
       });
       it('should be able to force cancel a lock transfer', async () => {
         const transactionId = randomUUID();
-        transferData = {
+        lockTransferData = {
           kind: TransferKind.LOCK,
           transactionId: transactionId,
         };
         const data = AbiCoder.encode(
-          ['tuple(string kind, string transactionId) transferData'],
-          [transferData],
+          ['tuple(string kind, string transactionId) lockTransferData'],
+          [lockTransferData],
         );
         await securityTokenProxy
           .connect(signers.registrarAgent)
@@ -902,13 +903,13 @@ context('SecurityTokenV1', () => {
       });
       it('only registrar could force release a lock transfer', async () => {
         const transactionId = randomUUID();
-        transferData = {
+        lockTransferData = {
           kind: TransferKind.LOCK,
           transactionId: transactionId,
         };
         const data = AbiCoder.encode(
-          ['tuple(string kind, string transactionId) transferData'],
-          [transferData],
+          ['tuple(string kind, string transactionId) lockTransferData'],
+          [lockTransferData],
         );
         await securityTokenProxy
           .connect(signers.registrarAgent)
@@ -935,13 +936,13 @@ context('SecurityTokenV1', () => {
       });
       it('only registrar could force cancel a lock transfer', async () => {
         const transactionId = randomUUID();
-        transferData = {
+        lockTransferData = {
           kind: TransferKind.LOCK,
           transactionId: transactionId,
         };
         const data = AbiCoder.encode(
-          ['tuple(string kind, string transactionId) transferData'],
-          [transferData],
+          ['tuple(string kind, string transactionId) lockTransferData'],
+          [lockTransferData],
         );
         await securityTokenProxy
           .connect(signers.registrarAgent)
@@ -968,13 +969,13 @@ context('SecurityTokenV1', () => {
       });
       it('should be able to cancel a lock transfer', async () => {
         const transactionId = randomUUID();
-        transferData = {
+        lockTransferData = {
           kind: TransferKind.LOCK,
           transactionId: transactionId,
         };
         const data = AbiCoder.encode(
-          ['tuple(string kind, string transactionId) transferData'],
-          [transferData],
+          ['tuple(string kind, string transactionId) lockTransferData'],
+          [lockTransferData],
         );
         await securityTokenProxy
           .connect(signers.registrarAgent)
@@ -1001,13 +1002,13 @@ context('SecurityTokenV1', () => {
       });
       it('cancel a lock transfer shoud emit LockUpdated Event', async () => {
         const transactionId = randomUUID();
-        transferData = {
+        lockTransferData = {
           kind: TransferKind.LOCK,
           transactionId: transactionId,
         };
         const data = AbiCoder.encode(
-          ['tuple(string kind, string transactionId) transferData'],
-          [transferData],
+          ['tuple(string kind, string transactionId) lockTransferData'],
+          [lockTransferData],
         );
         expect(
           securityTokenProxy
@@ -1032,10 +1033,10 @@ context('SecurityTokenV1', () => {
       });
     });
     context('Direct transfer', () => {
+      let transferData: TransferData;
       it('should be able to make direct transfer', async () => {
         transferData = {
-          kind: TransferKind.DIRECT,
-          transactionId,
+          kind: TransferKind.DIRECT
         };
         await securityTokenProxy
           .connect(signers.registrarAgent)
@@ -1045,7 +1046,7 @@ context('SecurityTokenV1', () => {
             tokenId,
             transferAmount,
             AbiCoder.encode(
-              ['tuple(string kind, string transactionId) transferData'],
+              ['tuple(string kind) transferData'],
               [transferData],
             ),
           );

@@ -411,15 +411,16 @@ contract SecurityTokenV1 is
         require(_data.length > 0, DataTransferEmpty());
         TransferData memory transferData = abi.decode(_data, (TransferData));
         if (_isLockTransfer(transferData.kind)) {
-            checkUUIDValidity(transferData.transactionId);
+            LockTransferData memory lockTransferData = abi.decode(_data, (LockTransferData));
+            checkUUIDValidity(lockTransferData.transactionId);
             SecurityTokenStorage storage $ = _getSecurityTokenStorage();
             require(
-                $.transferRequests[transferData.transactionId].status ==
+                $.transferRequests[lockTransferData.transactionId].status ==
                     TransferStatus.Undefined,
                 TransactionAlreadyExists()
             );
             $.engagedAmount[_id][_from] += _value;
-            $.transferRequests[transferData.transactionId] = TransferRequest(
+            $.transferRequests[lockTransferData.transactionId] = TransferRequest(
                 _from,
                 _to,
                 _id,
@@ -428,7 +429,7 @@ contract SecurityTokenV1 is
             );
             emit TransferSingle(_msgSender(), _from, _to, _id, 0);
             emit LockReady(
-                transferData.transactionId,
+                lockTransferData.transactionId,
                 _msgSender(),
                 _from,
                 _to,

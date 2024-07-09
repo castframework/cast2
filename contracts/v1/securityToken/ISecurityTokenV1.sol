@@ -11,7 +11,7 @@ interface ISecurityTokenV1 is IERC1155 {
         Validated,
         Rejected
     }
-    
+
     struct TransferData {
         string kind;
         string transactionId;
@@ -49,49 +49,6 @@ interface ISecurityTokenV1 is IERC1155 {
     );
 
     /**
-     * @dev Returns the version number of this contract
-     */
-    function version() external pure returns (string memory);
-
-    /**
-     * @dev Returns the name of the token
-     */
-    function name() external view returns (string memory);
-
-    /**
-     * @dev Returns the symbol of the token
-     */
-    function symbol() external view returns (string memory);
-
-    /**
-     * @dev Sets the token's URI
-     */
-    function setURI(uint256 tokenId, string memory tokenURI) external;
-
-    /**
-     * @dev Sets the token's baseURI
-     */
-    function setBaseURI(string memory baseURI) external;
-
-    /**
-     * @dev Burns a `amount` amount of `id` tokens from the account `_account`.
-     * NB: only the registrar operator is allowed to burn tokens
-     */
-    function burn(address _account, uint256 _id, uint256 _amount) external;
-
-    /**
-     * @dev Mints a `_amount` amount of `_id` tokens on `_to` address
-     * NB: if `_data` data is not empty, set up a registrar agent, settlement agent and an uri for the `_id` token.
-     * NB: only the registrar operator is allowed to mint new tokens
-     */
-    function mint(
-        address _to,
-        uint256 _id,
-        uint256 _amount,
-        bytes calldata data
-    ) external returns (bool);
-
-    /**
      * @dev Actually performs the transfer request corresponding to the given `_transactionId`
      * Called by the settlement agent operator
      */
@@ -124,37 +81,14 @@ interface ISecurityTokenV1 is IERC1155 {
     ) external returns (bool);
 
     /**
-     * @dev Returns the tokenId as number from an `_isinCode`.
+     * @dev Returns the name of the token
      */
-    function getTokenIdByIsin(
-        string calldata isinCode
-    ) external pure returns (uint256);
+    function name() external view returns (string memory);
 
     /**
-     * @dev See {IERC1155-safeTransferFrom}.
+     * @dev Returns the symbol of the token
      */
-    function safeTransferFrom(
-        address _from,
-        address _to,
-        uint256 _id,
-        uint256 _value,
-        bytes memory _data
-    ) external;
-
-    /**
-     * @dev See {ERC1155URIStorageUpgradeable-uri}.
-     */
-    function uri(uint256 _id) external view returns (string memory);
-
-    /**
-     * @dev Returns the balance of `addr` account for `id` token.
-     * NB: The returned balance is the "available" balance, which excludes tokens engaged in a transaction
-     * (i.e. a transfer back to the registrar operator or the operations operator)
-     */
-    function balanceOf(
-        address _addr,
-        uint256 _id
-    ) external view returns (uint256);
+    function symbol() external view returns (string memory);
 
     /**
      * @dev Returns current amount engaged in transfer requests for `addr` account and `id` token
@@ -163,4 +97,16 @@ interface ISecurityTokenV1 is IERC1155 {
         address _addr,
         uint256 _id
     ) external view returns (uint256);
+
+    /**
+     * @dev Returns the version number of this contract
+     */
+    function version() external pure returns (string memory);
+    
+    /**
+     * @dev Returns the tokenId as number from an `_isinCode`.
+     */
+    function getTokenIdByIsin(
+        string calldata isinCode
+    ) external pure returns (uint256);
 }

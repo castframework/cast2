@@ -53,8 +53,21 @@ contract SecurityTokenV1 is
     UUPSUpgradeable,
     ISecurityTokenV1
 {
+    /// @custom:storage-location erc7201:sgforge.storage.SecurityToken
+    struct SecurityTokenStorage {
+        mapping(string transactionId => TransferRequest) transferRequests;
+        mapping(uint256 id => mapping(address account => uint256)) engagedAmount;
+        mapping(uint256 id => bool) minted;
+        string name;
+        string symbol;
+    }
+
     string constant TRANFER_TYPE_DIRECT = "Direct";
     string constant TRANFER_TYPE_LOCK = "Lock";
+
+    // keccak256(abi.encode(uint256(keccak256("sgforge.storage.SecurityToken")) - 1)) & ~bytes32(uint256(0xff))
+    bytes32 private constant SecurityTokenStorageLocation =
+        0x5ca544375baada28ac0172fd60c2d13c5c7015fc0767de9d1a40a3419301b900;
 
     error DataTransferEmpty();
     error TransactionAlreadyExists();
@@ -84,19 +97,6 @@ contract SecurityTokenV1 is
      * @dev Used when token has not already been minted in the past
      */
     error TokenNotAlreadyMinted(uint256 id);
-
-    /// @custom:storage-location erc7201:sgforge.storage.SecurityToken
-    struct SecurityTokenStorage {
-        mapping(string transactionId => TransferRequest) transferRequests;
-        mapping(uint256 id => mapping(address account => uint256)) engagedAmount;
-        mapping(uint256 id => bool) minted;
-        string name;
-        string symbol;
-    }
-
-    // keccak256(abi.encode(uint256(keccak256("sgforge.storage.SecurityToken")) - 1)) & ~bytes32(uint256(0xff))
-    bytes32 private constant SecurityTokenStorageLocation =
-        0x5ca544375baada28ac0172fd60c2d13c5c7015fc0767de9d1a40a3419301b900;
 
     function _getSecurityTokenStorage()
         private
@@ -208,14 +208,16 @@ contract SecurityTokenV1 is
     function setURI(
         uint256 tokenId,
         string calldata tokenURI
-    ) external onlyRegistrar {
+    ) external whenNotPaused onlyRegistrar {
         ERC1155URIStorageUpgradeable._setURI(tokenId, tokenURI);
     }
 
     /**
      * @dev Sets `_baseURI` as the `_baseURI` for all tokens
      */
-    function setBaseURI(string calldata _baseURI) external onlyRegistrar {
+    function setBaseURI(
+        string calldata _baseURI
+    ) external whenNotPaused onlyRegistrar {
         ERC1155URIStorageUpgradeable._setBaseURI(_baseURI);
     }
 
@@ -227,7 +229,12 @@ contract SecurityTokenV1 is
         address _account,
         uint256 _id,
         uint256 _amount
-    ) external onlyRegistrar onlyWhenBalanceAvailable(_account, _id, _amount) {
+    )
+        external
+        whenNotPaused
+        onlyRegistrar
+        onlyWhenBalanceAvailable(_account, _id, _amount)
+    {
         super._burn(_account, _id, _amount);
     }
 
@@ -241,7 +248,7 @@ contract SecurityTokenV1 is
         uint256 _id,
         uint256 _amount,
         bytes calldata _data
-    ) external onlyRegistrar returns (bool) {
+    ) external whenNotPaused onlyRegistrar returns (bool) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         if (_data.length != 0) {
             require(!$.minted[_id], TokenAlreadyMinted(_id));
@@ -263,7 +270,12 @@ contract SecurityTokenV1 is
      */
     function releaseTransaction(
         string calldata _transactionId
-    ) external onlySettlementAgent(_transactionId) returns (bool) {
+    )
+        external
+        whenNotPaused
+        onlySettlementAgent(_transactionId)
+        returns (bool)
+    {
         return _releaseTransaction(_transactionId);
     }
 
@@ -273,7 +285,12 @@ contract SecurityTokenV1 is
      */
     function cancelTransaction(
         string calldata _transactionId
-    ) external onlyTransactionRegistrarAgent(_transactionId) returns (bool) {
+    )
+        external
+        whenNotPaused
+        onlyTransactionRegistrarAgent(_transactionId)
+        returns (bool)
+    {
         return _cancelTransaction(_transactionId);
     }
 
@@ -283,7 +300,7 @@ contract SecurityTokenV1 is
      */
     function forceReleaseTransaction(
         string calldata _transactionId
-    ) external onlyRegistrar returns (bool) {
+    ) external whenNotPaused onlyRegistrar returns (bool) {
         checkUUIDValidity(_transactionId);
         return _releaseTransaction(_transactionId);
     }
@@ -294,7 +311,7 @@ contract SecurityTokenV1 is
      */
     function forceCancelTransaction(
         string calldata _transactionId
-    ) external onlyRegistrar returns (bool) {
+    ) external whenNotPaused onlyRegistrar returns (bool) {
         checkUUIDValidity(_transactionId);
         return _cancelTransaction(_transactionId);
     }
@@ -365,7 +382,8 @@ contract SecurityTokenV1 is
         bytes memory _data
     )
         public
-        override(ERC1155Upgradeable, ISecurityTokenV1)
+        override(ERC1155Upgradeable, IERC1155)
+        whenNotPaused
         onlyRegistrarAgent(_id)
         onlyWhenBalanceAvailable(_from, _id, _value)
     {
@@ -451,11 +469,7 @@ contract SecurityTokenV1 is
     )
         public
         view
-        override(
-            ERC1155Upgradeable,
-            ERC1155URIStorageUpgradeable,
-            ISecurityTokenV1
-        )
+        override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable)
         returns (string memory)
     {
         return ERC1155URIStorageUpgradeable.uri(_id);
@@ -469,12 +483,7 @@ contract SecurityTokenV1 is
     function balanceOf(
         address _addr,
         uint256 _id
-    )
-        public
-        view
-        override(ERC1155Upgradeable, ISecurityTokenV1)
-        returns (uint256)
-    {
+    ) public view override(ERC1155Upgradeable, IERC1155) returns (uint256) {
         return _availableBalance(_addr, _id);
     }
 

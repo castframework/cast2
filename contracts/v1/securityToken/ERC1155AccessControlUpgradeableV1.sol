@@ -294,6 +294,48 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
         emit ImplementationAuthorized(_implementation);
     }
 
+    /**
+     * @dev Sets  settlement agent `_settlementAgent` for `_id` token
+     * NB: only the registrar could call this method
+     */
+    function setSettlementAgent(
+        uint256 _id,
+        address _settlementAgent
+    )
+        external
+        whenNotPaused
+        onlyRegistrar
+        onlyWhenSettlementAgentAlreadySet(_id)
+    {
+        _setSettlementAgent(_id, _settlementAgent);
+    }
+
+    /**
+     * @dev Sets  registrar agent `_registrarAgent` for `_id` token
+     * NB: only the registrar could call this method
+     */
+    function setRegistrarAgent(
+        uint256 _id,
+        address _registrarAgent
+    )
+        external
+        whenNotPaused
+        onlyRegistrar
+        onlyWhenRegistrarAgentAlreadySet(_id)
+    {
+        _setRegistrarAgent(_id, _registrarAgent);
+    }
+    /**
+     * @dev Internal method that sets  settlement agent `_settlementAgent` for `_id` token
+     */
+    function _setSettlementAgent(
+        uint256 _id,
+        address _settlementAgent
+    ) internal onlyNotZeroAddress(_settlementAgent) {
+        AccessControlStorage storage $ = _getAccessControlStorage();
+        $.settlementAgentByTokenId[_id] = _settlementAgent;
+    }
+
     function __AccessControl_init() internal onlyInitializing {
         __ERC1155Pausable_init();
     }
@@ -306,40 +348,6 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
         $.hasAcceptedRole[$.newRegistrar] = false;
         $.hasAcceptedRole[$.newTechnical] = false;
     }
-
-    /**
-     * @dev Sets  registrar agent `_registrarAgent` for `_id` token
-     * NB: only the registrar could call this method
-     */
-    function setRegistrarAgent(
-        uint256 _id,
-        address _registrarAgent
-    ) external onlyRegistrar onlyWhenRegistrarAgentAlreadySet(_id) {
-        _setRegistrarAgent(_id, _registrarAgent);
-    }
-
-    /**
-     * @dev Sets  settlement agent `_settlementAgent` for `_id` token
-     * NB: only the registrar could call this method
-     */
-    function setSettlementAgent(
-        uint256 _id,
-        address _settlementAgent
-    ) external onlyRegistrar onlyWhenSettlementAgentAlreadySet(_id) {
-        _setSettlementAgent(_id, _settlementAgent);
-    }
-
-    /**
-     * @dev Internal method that sets  settlement agent `_settlementAgent` for `_id` token
-     */
-    function _setSettlementAgent(
-        uint256 _id,
-        address _settlementAgent
-    ) internal onlyNotZeroAddress(_settlementAgent) {
-        AccessControlStorage storage $ = _getAccessControlStorage();
-        $.settlementAgentByTokenId[_id] = _settlementAgent;
-    }
-
     /**
      * @dev Internal method that sets  registrar agent `_registrarAgent` for `_id` token
      */

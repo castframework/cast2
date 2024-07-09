@@ -395,56 +395,6 @@ contract SecurityTokenV1 is
     }
 
     /**
-     * @dev Same semantic as ERC1155's safeTransferFrom function although there are 3 cases :
-     * 1- if the type of transfer is a Direct Transfer then the transfer will occur right away
-     * 2- if the type of transfer is Lock Transfer then the transfer will only actually occur once validated by the settlement agent operator
-     * using the releaseTransaction method or by the registrar operator(owner of the registry) via forceReleaseTransaction
-     * 3- if the type of Transfer is unknown then the transfer will be rejected
-     */
-    function _internalSafeTransferFrom(
-        address _from,
-        address _to,
-        uint256 _id,
-        uint256 _value,
-        bytes memory _data
-    ) private onlyWhenBalanceAvailable(_from, _id, _value) {
-        require(_data.length > 0, DataTransferEmpty());
-        TransferData memory transferData = abi.decode(_data, (TransferData));
-        if (_isLockTransfer(transferData.kind)) {
-            LockTransferData memory lockTransferData = abi.decode(_data, (LockTransferData));
-            checkUUIDValidity(lockTransferData.transactionId);
-            SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-            require(
-                $.transferRequests[lockTransferData.transactionId].status ==
-                    TransferStatus.Undefined,
-                TransactionAlreadyExists()
-            );
-            $.engagedAmount[_id][_from] += _value;
-            $.transferRequests[lockTransferData.transactionId] = TransferRequest(
-                _from,
-                _to,
-                _id,
-                _value,
-                TransferStatus.Created
-            );
-            emit TransferSingle(_msgSender(), _from, _to, _id, 0);
-            emit LockReady(
-                lockTransferData.transactionId,
-                _msgSender(),
-                _from,
-                _to,
-                _id,
-                _value,
-                _data
-            );
-        } else if (_isDirectTransfer(transferData.kind)) {
-            super._safeTransferFrom(_from, _to, _id, _value, _data);
-        } else {
-            revert InvalidTransferType();
-        }
-    }
-
-    /**
      * @dev See {IERC1155-safeBatchTransferFrom}.
      */
     function safeBatchTransferFrom(
@@ -628,6 +578,61 @@ contract SecurityTokenV1 is
             TransferStatus.Validated
         );
         return true;
+    }
+
+    /**
+     * @dev Same semantic as ERC1155's safeTransferFrom function although there are 3 cases :
+     * 1- if the type of transfer is a Direct Transfer then the transfer will occur right away
+     * 2- if the type of transfer is Lock Transfer then the transfer will only actually occur once validated by the settlement agent operator
+     * using the releaseTransaction method or by the registrar operator(owner of the registry) via forceReleaseTransaction
+     * 3- if the type of Transfer is unknown then the transfer will be rejected
+     */
+    function _internalSafeTransferFrom(
+        address _from,
+        address _to,
+        uint256 _id,
+        uint256 _value,
+        bytes memory _data
+    ) private onlyWhenBalanceAvailable(_from, _id, _value) {
+        require(_data.length > 0, DataTransferEmpty());
+        TransferData memory transferData = abi.decode(_data, (TransferData));
+        if (_isLockTransfer(transferData.kind)) {
+            LockTransferData memory lockTransferData = abi.decode(
+                _data,
+                (LockTransferData)
+            );
+            checkUUIDValidity(lockTransferData.transactionId);
+            SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+            require(
+                $.transferRequests[lockTransferData.transactionId].status ==
+                    TransferStatus.Undefined,
+                TransactionAlreadyExists()
+            );
+            $.engagedAmount[_id][_from] += _value;
+            $.transferRequests[
+                lockTransferData.transactionId
+            ] = TransferRequest(
+                _from,
+                _to,
+                _id,
+                _value,
+                TransferStatus.Created
+            );
+            emit TransferSingle(_msgSender(), _from, _to, _id, 0);
+            emit LockReady(
+                lockTransferData.transactionId,
+                _msgSender(),
+                _from,
+                _to,
+                _id,
+                _value,
+                _data
+            );
+        } else if (_isDirectTransfer(transferData.kind)) {
+            super._safeTransferFrom(_from, _to, _id, _value, _data);
+        } else {
+            revert InvalidTransferType();
+        }
     }
 
     /**

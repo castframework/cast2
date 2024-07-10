@@ -29,6 +29,7 @@ context('SecurityTokenV1 Pausable', () => {
   let investor2Address: string;
 
   beforeEach(async () => {
+    securityToken = undefined;
     securityToken = await loadFixture(deploySecurityTokenFixture);
     signers = await getOperatorSigners();
 

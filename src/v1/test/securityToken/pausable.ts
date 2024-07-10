@@ -28,14 +28,14 @@ context('SecurityTokenV1 Pausable', () => {
   let investor1Address: string;
   let investor2Address: string;
 
-  beforeEach(async () => {
-    securityToken = undefined;
+  beforeEach(async (done) => {
     securityToken = await loadFixture(deploySecurityTokenFixture);
     signers = await getOperatorSigners();
 
     registrarAddress = await signers.registrar.getAddress();
     investor1Address = await signers.investor1.getAddress();
     investor2Address = await signers.investor2.getAddress();
+    done();
   });
 
   it('Should pause the contract', async () => {

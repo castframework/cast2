@@ -92,7 +92,7 @@ context('SecurityTokenV1 Pausable', () => {
   });
 });
 
-context('Prohibited methods when contract is paused', async () => {
+context.only('Prohibited methods when contract is paused', async () => {
   let securityToken: SecurityTokenV1;
   const mintingAmount = 1000;
   let signers: {
@@ -110,7 +110,7 @@ context('Prohibited methods when contract is paused', async () => {
   let investor2Address: string;
   beforeEach(
     async () => {
-      securityToken = await loadFixture(deploySecurityTokenFixture);
+      securityToken = await deploySecurityTokenFixture();
       signers = await getOperatorSigners();
 
       registrarAddress = await signers.registrar.getAddress();

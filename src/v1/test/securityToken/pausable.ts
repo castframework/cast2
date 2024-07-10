@@ -92,7 +92,7 @@ context('SecurityTokenV1 Pausable', () => {
   });
 });
 
-context.only('Prohibited methods when contract is paused', async () => {
+context('Prohibited methods when contract is paused', async () => {
   let securityToken: SecurityTokenV1;
   const mintingAmount = 1000;
   let signers: {

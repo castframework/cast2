@@ -70,6 +70,13 @@
     "ci:mint-data-summary": "npx ts-node src/v1/scripts/ci-tools/mint-data-summary.ts",
     "ci:transfer-data-summary": "npx ts-node src/v1/scripts/ci-tools/transfer-data-summary.ts"
   },
+  "overrides": {
+    "@nomicfoundation/hardhat-toolbox": {
+      "@nomicfoundation/hardhat-verify": {
+        "undici": "^5.23.3"
+      }
+    }
+  },
   "lint-staged": {
     "*.ts": "eslint --ignore-path .gitignore  --max-warnings=0",
     "*.sol": "npm run lint:sol"

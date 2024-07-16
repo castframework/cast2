@@ -223,9 +223,10 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
      */
     function acceptRegistrarRole() external {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        if ($.newRegistrar != _msgSender()) revert UnauthorizedRegistrar();
-        $.hasAcceptedRole[$.newRegistrar] = true;
-        emit AcceptedRegistrarRole($.newRegistrar);
+        address registrarAddr = $.newRegistrar;
+        if (registrarAddr != _msgSender()) revert UnauthorizedRegistrar();
+        $.hasAcceptedRole[registrarAddr] = true;
+        emit AcceptedRegistrarRole(registrarAddr);
     }
 
     /**
@@ -235,9 +236,10 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
      */
     function acceptTechnicalRole() external {
         AccessControlStorage storage $ = _getAccessControlStorage();
-        if ($.newTechnical != _msgSender()) revert UnauthorizedTechnical();
-        $.hasAcceptedRole[$.newTechnical] = true;
-        emit AcceptedTechnicalRole($.newTechnical);
+        address technicalAddr = $.newTechnical;
+        if (technicalAddr != _msgSender()) revert UnauthorizedTechnical();
+        $.hasAcceptedRole[technicalAddr] = true;
+        emit AcceptedTechnicalRole(technicalAddr);
     }
 
     /**

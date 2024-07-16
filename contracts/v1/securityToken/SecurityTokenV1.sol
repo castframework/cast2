@@ -79,9 +79,6 @@ contract SecurityTokenV1 is
     error InvalidIsinCodeLength();
     error InvalidIsinCodeCharacter(bytes1 character);
 
-    error InvalidUUIDCharacter();
-    error InvalidUUIDLength();
-
     error UnsupportedMethod();
 
     /**

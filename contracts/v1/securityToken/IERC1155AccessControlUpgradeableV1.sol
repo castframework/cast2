@@ -21,6 +21,15 @@ interface IERC1155AccessControlUpgradeableV1 {
     event ImplementationAuthorized(address implementation);
 
     /**
+     * @dev Emitted when the token's registrar agent has been updated
+     */
+    event RegistrarAgentUpdated(uint256 tokenId, address oldRegistrarAgent, address newRegistrarAgent);
+    
+    /**
+     * @dev Emitted when the token's settlement agent has been updated
+     */
+    event SettlementAgentUpdated(uint256 tokenId, address oldSettlementAgent, address newSettlementAgent);
+    /**
      * @dev Accepts the future registrar role
      * NB: only the future registrar operator can call this method
      */

@@ -338,7 +338,9 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
         address _settlementAgent
     ) internal onlyNotZeroAddress(_settlementAgent) {
         AccessControlStorage storage $ = _getAccessControlStorage();
+        address oldSettlementAgent = $.settlementAgentByTokenId[_id];
         $.settlementAgentByTokenId[_id] = _settlementAgent;
+        emit SettlementAgentUpdated(_id, oldSettlementAgent, _settlementAgent);
     }
 
     function __AccessControl_init() internal onlyInitializing {
@@ -362,7 +364,9 @@ abstract contract ERC1155AccessControlUpgradeableV1 is
         address _registrarAgent
     ) internal onlyNotZeroAddress(_registrarAgent) {
         AccessControlStorage storage $ = _getAccessControlStorage();
+        address oldRegistrarAgent = $.registrarAgentByTokenId[_id];
         $.registrarAgentByTokenId[_id] = _registrarAgent;
+        emit RegistrarAgentUpdated(_id, oldRegistrarAgent, _registrarAgent);
     }
 
     function _update(

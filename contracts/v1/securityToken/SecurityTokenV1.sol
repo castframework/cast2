@@ -121,7 +121,6 @@ contract SecurityTokenV1 is
      * @dev Throws if called by any account other than the settlement agent.
      */
     modifier onlySettlementAgent(string calldata _transactionId) {
-        checkUUIDValidity(_transactionId);
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         uint tokenId = $.transferRequests[_transactionId].id;
         require(
@@ -134,7 +133,6 @@ contract SecurityTokenV1 is
      * @dev Throws if called by any account other than the settlement agent.
      */
     modifier onlyTransactionRegistrarAgent(string calldata _transactionId) {
-        checkUUIDValidity(_transactionId);
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         uint tokenId = $.transferRequests[_transactionId].id;
         require(
@@ -293,7 +291,6 @@ contract SecurityTokenV1 is
     function forceReleaseTransaction(
         string calldata _transactionId
     ) external whenNotPaused onlyRegistrar returns (bool) {
-        checkUUIDValidity(_transactionId);
         return _releaseTransaction(_transactionId);
     }
 
@@ -304,7 +301,6 @@ contract SecurityTokenV1 is
     function forceCancelTransaction(
         string calldata _transactionId
     ) external whenNotPaused onlyRegistrar returns (bool) {
-        checkUUIDValidity(_transactionId);
         return _cancelTransaction(_transactionId);
     }
 
@@ -601,7 +597,6 @@ contract SecurityTokenV1 is
                 _data,
                 (LockTransferData)
             );
-            checkUUIDValidity(lockTransferData.transactionId);
             SecurityTokenStorage storage $ = _getSecurityTokenStorage();
             require(
                 $.transferRequests[lockTransferData.transactionId].status ==
@@ -677,44 +672,6 @@ contract SecurityTokenV1 is
             }
         }
         return isin;
-    }
-
-    /**
-     * @dev Returns whether the string `_str` is a valid lowercase UUID format
-     */
-    function checkUUIDValidity(string memory _str) private pure {
-        bytes memory maybeUUID = bytes(_str);
-        require(bytes(maybeUUID).length == 36, InvalidUUIDLength());
-        for (uint256 i = 0; i < 8; i++) {
-            require(isValidUUIDCharacter(maybeUUID[i]), InvalidUUIDCharacter());
-        }
-        require(maybeUUID[8] == 0x2d, InvalidUUIDCharacter());
-        for (uint256 i = 9; i < 13; i++) {
-            require(isValidUUIDCharacter(maybeUUID[i]), InvalidUUIDCharacter());
-        }
-        require(maybeUUID[13] == 0x2d, InvalidUUIDCharacter());
-        for (uint256 i = 14; i < 18; i++) {
-            require(isValidUUIDCharacter(maybeUUID[i]), InvalidUUIDCharacter());
-        }
-        require(maybeUUID[18] == 0x2d, InvalidUUIDCharacter());
-        for (uint256 i = 19; i < 23; i++) {
-            require(isValidUUIDCharacter(maybeUUID[i]), InvalidUUIDCharacter());
-        }
-        require(maybeUUID[23] == 0x2d, InvalidUUIDCharacter());
-        for (uint256 i = 24; i < 36; i++) {
-            require(isValidUUIDCharacter(maybeUUID[i]), InvalidUUIDCharacter());
-        }
-    }
-
-    /**
-     * @dev Returns whether the the character `_character` is a valid lowercase hexadecimal digit
-     */
-    function isValidUUIDCharacter(
-        bytes1 _character
-    ) private pure returns (bool) {
-        return
-            (_character >= 0x30 && _character <= 0x39) ||
-            (_character >= 0x61 && _character <= 0x66);
     }
 
     function _getSecurityTokenStorage()

@@ -31,7 +31,6 @@ context('SecurityTokenV1', () => {
   let mintData: MintData;
   const AbiCoder = new ethers.AbiCoder();
 
-
   let registrarAddress: string;
   let investor1Address: string;
   let investor2Address: string;
@@ -148,8 +147,7 @@ context('SecurityTokenV1', () => {
         settlementAgent: settlementAgentAddress,
         metadataUri: '0x',
       };
-      console.log(mintData);
-  
+
       mintFunction = () =>
         securityTokenProxy
           .connect(signers.registrar)
@@ -183,44 +181,27 @@ context('SecurityTokenV1', () => {
       ).to.be.equals(newRegistrarAddress);
     });
 
-
     it("should emit SettlementAgentUpdated when token's settlement agent has been updated", async () => {
-
-      console.log(settlementAgentAddress, receiverAddress);
-
-      const oldSettlementAgent = await securityTokenProxy.getSettlementAgent(tokenId);
-
-      console.log(oldSettlementAgent);
+      const oldSettlementAgent = await securityTokenProxy.getSettlementAgent(
+        tokenId,
+      );
 
       const setSettlementAgent = securityTokenProxy
         .connect(signers.registrar)
         .setSettlementAgent(tokenId, receiverAddress);
 
-      await expect(
-        setSettlementAgent
-      ).to.emit(securityTokenProxy,
-        "SettlementAgentUpdated"
-      ).withArgs(
-        tokenId,
-        settlementAgentAddress,
-        receiverAddress
-      )
+      await expect(setSettlementAgent)
+        .to.emit(securityTokenProxy, 'SettlementAgentUpdated')
+        .withArgs(tokenId, settlementAgentAddress, receiverAddress);
     });
     it("should emit RegistrarAgentUpdated when token's registrar agent has been updated", async () => {
       const setRegistrarAgent = securityTokenProxy
         .connect(signers.registrar)
         .setRegistrarAgent(tokenId, newRegistrarAddress);
-      await expect(
-        setRegistrarAgent
-      ).to.emit(securityTokenProxy,
-        "RegistrarAgentUpdated"
-      ).withArgs(
-        tokenId,
-        registrarAddress,
-        newRegistrarAddress
-      )
+      await expect(setRegistrarAgent)
+        .to.emit(securityTokenProxy, 'RegistrarAgentUpdated')
+        .withArgs(tokenId, registrarAddress, newRegistrarAddress);
     });
-
 
     it("only registrar could set token's settlement agent", async () => {
       const setSettlementAgent = securityTokenProxy

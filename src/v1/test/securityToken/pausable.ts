@@ -108,17 +108,15 @@ context('Prohibited methods when contract is paused', async () => {
   let registrarAddress: string;
   let investor1Address: string;
   let investor2Address: string;
-  beforeEach(
-    async () => {
-      securityToken = await deploySecurityTokenFixture();
-      signers = await getOperatorSigners();
+  beforeEach(async () => {
+    securityToken = await deploySecurityTokenFixture();
+    signers = await getOperatorSigners();
 
-      registrarAddress = await signers.registrar.getAddress();
-      investor1Address = await signers.investor1.getAddress();
-      investor2Address = await signers.investor2.getAddress();
-      await securityToken.connect(signers.registrar).pause()
-    }
-  );
+    registrarAddress = await signers.registrar.getAddress();
+    investor1Address = await signers.investor1.getAddress();
+    investor2Address = await signers.investor2.getAddress();
+    await securityToken.connect(signers.registrar).pause();
+  });
   it('should call setURI only when contract not paused', async () =>
     await expect(
       securityToken.connect(signers.registrar).setURI(1, '0x'),

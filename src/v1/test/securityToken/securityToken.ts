@@ -53,7 +53,6 @@ context('SecurityTokenV1', () => {
       settlementAgent: settlementAgentAddress,
       metadataUri: '0x',
     };
-    console.log(mintData);
 
     mintFunction = () =>
       securityTokenProxy
@@ -70,7 +69,6 @@ context('SecurityTokenV1', () => {
           ),
         );
     await mintFunction();
-    console.log(await securityTokenProxy.getSettlementAgent(tokenId));
   });
   context('Name and symbol', async () => {
     it('should match the token name', async () =>
@@ -269,7 +267,7 @@ context('SecurityTokenV1', () => {
     let lockTransferData: LockTransferData;
     let transferAmount: number = 1;
     const transactionId = randomUUID();
-    lockTransferData = { kind: TransferKind.LOCK, transactionId};
+    lockTransferData = { kind: TransferKind.LOCK, transactionId };
     const data = AbiCoder.encode(
       ['tuple(string kind, string transactionId) lockTransferData'],
       [lockTransferData],
@@ -862,7 +860,7 @@ context('SecurityTokenV1', () => {
       let transferData: TransferData;
       it('should be able to make direct transfer', async () => {
         transferData = {
-          kind: TransferKind.DIRECT
+          kind: TransferKind.DIRECT,
         };
         await securityTokenProxy
           .connect(signers.registrarAgent)

@@ -14,7 +14,7 @@ const TransferDataConfigSchema = z.object({
     .string()
     .refine(...IsTransferKind)
     .transform((val) => val as TransferKind),
-  TransactionId: z.string().uuid().optional(),
+  TransactionId: z.string().optional(),
   OutputFolder: z.string(),
 });
 

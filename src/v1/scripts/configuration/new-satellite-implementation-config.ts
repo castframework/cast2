@@ -2,22 +2,22 @@ import { ZodError, z } from 'zod';
 
 const EnvConfigVariableName = 'NEW_SATELLITE_IMPLEMENTATION_JSON_CONFIG';
 
-const NewSecurityTokenImplementationConfigSchema = z.object({
+const NewSatelliteImplementationConfigSchema = z.object({
   Contracts: z.object({
     ImplementationArtifactName: z.string(),
   }),
   OutputFolder: z.string(),
 });
 
-export type NewSecurityTokenImplementationConfig = z.infer<
-  typeof NewSecurityTokenImplementationConfigSchema
+export type NewSatelliteImplementationConfig = z.infer<
+  typeof NewSatelliteImplementationConfigSchema
 >;
 
-export function GetNewSatelliteImplementationConfig(): NewSecurityTokenImplementationConfig {
+export function GetNewSatelliteImplementationConfig(): NewSatelliteImplementationConfig {
   let configFromEnv = process.env[EnvConfigVariableName];
 
   try {
-    return NewSecurityTokenImplementationConfigSchema.parse(
+    return NewSatelliteImplementationConfigSchema.parse(
       JSON.parse(configFromEnv || ''),
     );
   } catch (e) {

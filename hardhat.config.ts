@@ -9,7 +9,10 @@ const {
 } = require("hardhat/builtin-tasks/task-names");
 const path = require("path");
 import "@nomicfoundation/hardhat-chai-matchers"; //Added for revertWithCustomErrors
+
 import "./src/v1/scripts/verify-implementation";
+
+import "./src/v1/scripts/verify-satellite-implementation";
 
 import * as dotenv from 'dotenv';
 dotenv.config()

@@ -57,6 +57,7 @@
     "test": "npm run clean && npx hardhat test",
     "verify": "npx hardhat verify",
     "verify:implem": "npx hardhat verify-implem",
+    "verify-satellite-implem": "npx hardhat verify-satellite-implem",
     "pre-commit": "lint-staged --verbose",
     "coverage:only": "hardhat coverage",
     "coverage:check-limit": "node check-coverage-limit.js",

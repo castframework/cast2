@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 
 import "./ISecurityTokenV1.sol";
 import "./ERC1155AccessControlUpgradeableV1.sol";
+import "../satellite/ISatelliteV1.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/ERC1155Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155BurnableUpgradeable.sol";
@@ -11,6 +12,9 @@ import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155Supp
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/extensions/ERC1155URIStorageUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
+import "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 
 /**
  * @dev The `SecurityToken` contract is basically an ERC1155 with a few specifics
@@ -24,7 +28,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
  *      - authorises upgrade to next implementation contract (ERC1155AccessControlUpgradeableV1.authorizeImplementation)
  * - the technical operator(for the whole contract):
  *      - only the technical operator can launch a (previously authorised) upgrade of the implementation contract (upgradeTo/upgradeToAndCall)
- * - the registrar agent operator(by tokenId)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ):
+ * - the registrar agent operator(by tokenId):
  *      - initiate a safeTransferFrom
  *      - cancel a locked safeTransferFrom using the cancelTransaction method
  * - the settlement agent operator(by tokenId):
@@ -60,6 +64,7 @@ contract SecurityTokenV1 is
         mapping(uint256 id => bool) minted;
         string name;
         string symbol;
+        mapping(uint256 id => address) satellites;
     }
 
     string constant TRANFER_TYPE_DIRECT = "Direct";
@@ -80,6 +85,9 @@ contract SecurityTokenV1 is
     error InvalidIsinCodeCharacter(bytes1 character);
 
     error UnsupportedMethod();
+
+    error SatelliteAlreadyExist();
+    error InvalidSatelliteAddress();
 
     /**
      * @dev Used when "available" balance is insufficient
@@ -243,6 +251,24 @@ contract SecurityTokenV1 is
             _setRegistrarAgent(_id, mintData.registrarAgent);
             _setSettlementAgent(_id, mintData.settlementAgent);
             ERC1155URIStorageUpgradeable._setURI(_id, mintData.metadataUri);
+            if (mintData.satelliteImplementationAddress != address(0)) {
+                require(
+                    ERC165Checker.supportsInterface(
+                        mintData.satelliteImplementationAddress,
+                        type(ISatelliteV1).interfaceId
+                    ),
+                    InvalidSatelliteAddress()
+                );
+                address satelitteAddress = _launchSatellite(
+                    _id,
+                    mintData.satelliteImplementationAddress
+                );
+                ISatelliteV1(satelitteAddress).transferFrom(
+                    address(0),
+                    _to,
+                    _amount
+                );
+            }
             $.minted[_id] = true;
         } else {
             require($.minted[_id], TokenNotAlreadyMinted(_id));
@@ -332,6 +358,14 @@ contract SecurityTokenV1 is
     function symbol() external view returns (string memory) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         return $.symbol;
+    }
+
+    /**
+     * @dev Returns the address of the satellite contract for tokenId
+     */
+    function satellite(uint256 _tokenId) external view returns (address) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        return $.satellites[_tokenId];
     }
 
     /**
@@ -434,12 +468,29 @@ contract SecurityTokenV1 is
     )
         public
         view
-        override(ERC1155Upgradeable, ERC1155URIStorageUpgradeable)
+        override(
+            ISecurityTokenV1,
+            ERC1155Upgradeable,
+            ERC1155URIStorageUpgradeable
+        )
         returns (string memory)
     {
         return ERC1155URIStorageUpgradeable.uri(_id);
     }
 
+    /**
+     * @dev Total value of tokens in with a given id.
+     */
+    function totalSupply(
+        uint256 _id
+    )
+        public
+        view
+        override(ISecurityTokenV1, ERC1155SupplyUpgradeable)
+        returns (uint256)
+    {
+        return super.totalSupply(_id);
+    }
     /**
      * @dev Returns the balance of `addr` account for `id` token.
      * NB: The returned balance is the "available" balance, which excludes tokens engaged in a transaction
@@ -555,6 +606,7 @@ contract SecurityTokenV1 is
         $.engagedAmount[transferRequest.id][
             transferRequest.from
         ] -= transferRequest.value;
+
         super._safeTransferFrom(
             transferRequest.from,
             transferRequest.to,
@@ -562,6 +614,14 @@ contract SecurityTokenV1 is
             transferRequest.value,
             ""
         );
+
+        _handleSatelliteTransfer(
+            transferRequest.id,
+            transferRequest.from,
+            transferRequest.to,
+            transferRequest.value
+        );
+
         emit LockUpdated(
             _transactionId,
             _msgSender(),
@@ -573,6 +633,36 @@ contract SecurityTokenV1 is
         return true;
     }
 
+    /**
+     * @dev Deploy a new satellite contract for a given tokenId
+     * The goal of a satellite contract is that a given token appear
+     * as his own on explorers (e.g. own token tracker on etherscan)
+     */
+    function _launchSatellite(
+        uint256 _tokenId,
+        address _satelliteImplementation
+    ) private returns (address) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+
+        require($.satellites[_tokenId] == address(0), SatelliteAlreadyExist());
+
+        // This assume tokenId is an ASCII encoded ISIN
+        // Note : if not, this may lead to unexpected behaviour from chain explorer
+        string memory idAsName = string(abi.encodePacked(_tokenId));
+
+        address satelliteAddress = Clones.clone(_satelliteImplementation);
+        ISatelliteV1(satelliteAddress).initialize(
+            address(this),
+            _tokenId,
+            idAsName,
+            idAsName
+        );
+        $.satellites[_tokenId] = satelliteAddress;
+
+        emit NewSatellite(_tokenId, satelliteAddress);
+
+        return satelliteAddress;
+    }
     /**
      * @dev Same semantic as ERC1155's safeTransferFrom function although there are 3 cases :
      * 1- if the type of transfer is a Direct Transfer then the transfer will occur right away
@@ -622,11 +712,23 @@ contract SecurityTokenV1 is
             );
         } else if (_isDirectTransfer(transferData.kind)) {
             super._safeTransferFrom(_from, _to, _id, _value, _data);
+            _handleSatelliteTransfer(_id, _from, _to, _value);
         } else {
             revert InvalidTransferType();
         }
     }
-
+    function _handleSatelliteTransfer(
+        uint256 _tokenId,
+        address _from,
+        address _to,
+        uint256 _value
+    ) private {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        address satelliteAddress = $.satellites[_tokenId];
+        if (satelliteAddress != address(0)) {
+            ISatelliteV1(satelliteAddress).transferFrom(_from, _to, _value);
+        }
+    }
     /**
      * @dev Returns whether the kind `_kind` is a direct transfer
      */

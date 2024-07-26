@@ -5,6 +5,7 @@ import {
 import { ethers, upgrades } from 'hardhat';
 import { getOperatorSigners } from './signers';
 import { BASE_URI, NAME, SYMBOL, URI } from './constants';
+import { SatelliteV1 } from 'dist/types';
 
 export async function getSecurityTokenOperatorsAddresses(): Promise<string[]> {
   const signers = await getOperatorSigners();
@@ -29,6 +30,13 @@ export async function deploySecurityTokenFixture(): Promise<SecurityTokenV1> {
     },
   )) as SecurityTokenV1;
   return securityTokenProxyfiedInstance;
+}
+
+export async function deploySatelliteV1Fixture(): Promise<SatelliteV1> {
+  const SatelliteV1 = await ethers.getContractFactory('SatelliteV1');
+
+  const satelliteV1ImplementationInstance = (await SatelliteV1.deploy()) as SatelliteV1;
+  return satelliteV1ImplementationInstance;
 }
 
 export async function deploySecurityTokenV2Fixture(): Promise<string> {

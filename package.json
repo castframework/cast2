@@ -62,6 +62,7 @@
     "coverage:check-limit": "node check-coverage-limit.js",
     "coverage": "npm run clean && npm run coverage:only && npm run coverage:check-limit",
     "generate:implementation-tx-data": "npx hardhat run src/v1/scripts/generate-implementation-deploy-transaction-data.ts",
+    "generate:satellite-implementation-tx-data": "npx hardhat run src/v1/scripts/generate-implementation-deploy-satellite-transaction-data.ts",
     "generate:proxy-tx-data": "npx hardhat run src/v1/scripts/generate-proxy-deploy-transaction-data.ts",
     "generate:mint-data-parameter": "npx hardhat run src/v1/scripts/generate-mint-data-parameter.ts",
     "generate:transfer-data-parameter": "npx hardhat run src/v1/scripts/generate-transfer-data-parameter.ts",

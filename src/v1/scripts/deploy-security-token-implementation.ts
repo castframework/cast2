@@ -8,8 +8,6 @@ async function main() {
   const registrarAddress = config.NewOperatorsAddress.Registrar;
   const technicalAddress = config.NewOperatorsAddress.Technical;
 
-  const SmartCoin = await ethers.getContractFactory('SecurityTokenV1');
-
   console.log(
     `Deploying SecurityTokenV1 implementation with registrar[${registrarAddress}] technical[${technicalAddress}]`,
   );

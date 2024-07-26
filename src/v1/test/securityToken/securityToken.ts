@@ -1,7 +1,7 @@
 import { SecurityTokenV1 } from '../../../dist/types';
 import { expect, assert } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { deploySecurityTokenFixture } from '../utils/builders';
+import { deploySatelliteV1Fixture, deploySecurityTokenFixture } from '../utils/builders';
 import { getOperatorSigners } from '../utils/signers';
 import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
@@ -15,9 +15,12 @@ import {
 } from '../utils/types';
 import { randomUUID } from 'crypto';
 import { NAME, SYMBOL } from '../utils/constants';
+import { SatelliteV1 } from 'dist/types';
 
 context('SecurityTokenV1', () => {
   let securityTokenProxy: SecurityTokenV1;
+  let satelliteImplementation: SatelliteV1;
+
   const emptyMintData = '0x';
   let signers: {
     registrar: Signer;
@@ -38,11 +41,15 @@ context('SecurityTokenV1', () => {
   let mintFunction: () => {};
   let mintData: MintData;
   let uri;
+  let satelliteImplementationAddress;
 
   beforeEach(async () => {
     signers = await getOperatorSigners();
+    
     securityTokenProxy = await loadFixture(deploySecurityTokenFixture);
+    satelliteImplementation = await loadFixture(deploySatelliteV1Fixture);
 
+    satelliteImplementationAddress = await satelliteImplementation.getAddress();
     receiverAddress = await signers.investor1.getAddress();
     registrarAgentAddress = await signers.registrarAgent.getAddress();
     settlementAgentAddress = await signers.settlementAgent.getAddress();
@@ -52,6 +59,7 @@ context('SecurityTokenV1', () => {
       registrarAgent: registrarAgentAddress,
       settlementAgent: settlementAgentAddress,
       metadataUri: '0x',
+      satelliteImplementationAddress
     };
 
     mintFunction = () =>
@@ -63,7 +71,7 @@ context('SecurityTokenV1', () => {
           amount,
           AbiCoder.encode(
             [
-              'tuple(address registrarAgent, address settlementAgent, string metadataUri) mintData',
+              'tuple(address registrarAgent, address settlementAgent, string metadataUri, address satelliteImplementationAddress) mintData',
             ],
             [mintData],
           ),

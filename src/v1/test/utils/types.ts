@@ -2,6 +2,7 @@ export type MintData = {
   registrarAgent: string;
   settlementAgent: string;
   metadataUri: string;
+  satelliteImplementationAddress: string;
 };
 export type TransferData = {
   kind: string;

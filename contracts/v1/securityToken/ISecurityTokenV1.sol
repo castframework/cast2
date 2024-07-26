@@ -22,6 +22,7 @@ interface ISecurityTokenV1 is IERC1155 {
         address registrarAgent;
         address settlementAgent;
         string metadataUri;
+        address satelliteImplementationAddress;
     }
 
     struct TransferRequest {
@@ -50,6 +51,7 @@ interface ISecurityTokenV1 is IERC1155 {
         TransferStatus status
     );
 
+    event NewSatellite(uint256 indexed tokenId, address satelite);
     /**
      * @dev Actually performs the transfer request corresponding to the given `_transactionId`
      * Called by the settlement agent operator
@@ -126,4 +128,14 @@ interface ISecurityTokenV1 is IERC1155 {
     function getTokenIdByIsin(
         string calldata isinCode
     ) external pure returns (uint256);
+
+    /**
+     * @dev Total value of tokens in with a given id.
+     */
+    function totalSupply(uint256 id) external view returns (uint256);
+    
+    /**
+     * @dev Returns the token's uri.
+     */
+    function uri(uint256 tokenId) external view  returns (string memory);
 }

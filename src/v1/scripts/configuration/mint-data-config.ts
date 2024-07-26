@@ -7,6 +7,7 @@ const MintDataConfigSchema = z.object({
   RegistrarAgentAddress: z.string().refine(...IsETHAddress),
   SettlerAgentAddress: z.string().refine(...IsETHAddress),
   MetadataUri: z.string(),
+  SatelliteImplementationAddress: z.string().refine(...IsETHAddress),
   OutputFolder: z.string(),
 });
 

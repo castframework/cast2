@@ -16,6 +16,7 @@ async function main() {
     config.RegistrarAgentAddress,
     config.SettlerAgentAddress,
     config.MetadataUri,
+    config.SatelliteImplementationAddress
   );
 
   console.log(`Generated data field :\n${newMintData}`);
@@ -41,14 +42,15 @@ function generateDataForMint(
   registrarAgent: string,
   settlementAgent: string,
   metadataUri: string,
+  satelliteImplementationAddress: string
 ) {
   var AbiCoder = new ethers.AbiCoder();
 
   return AbiCoder.encode(
     [
-      'tuple(address registrarAgent, address settlementAgent, string metadataUri) mintData',
+      'tuple(address registrarAgent, address settlementAgent, string metadataUri, address satelliteImplementationAddress) mintData',
     ],
-    [{ registrarAgent, settlementAgent, metadataUri }],
+    [{ registrarAgent, settlementAgent, metadataUri, satelliteImplementationAddress }],
   );
 }
 

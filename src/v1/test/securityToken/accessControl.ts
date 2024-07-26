@@ -146,6 +146,7 @@ context('SecurityTokenV1', () => {
         registrarAgent: registrarAddress,
         settlementAgent: settlementAgentAddress,
         metadataUri: '0x',
+        satelliteImplementationAddress: ZERO_ADDRESS
       };
 
       mintFunction = () =>
@@ -157,7 +158,7 @@ context('SecurityTokenV1', () => {
             amount,
             AbiCoder.encode(
               [
-                'tuple(address registrarAgent, address settlementAgent, string metadataUri) mintData',
+                'tuple(address registrarAgent, address settlementAgent, string metadataUri, address satelliteImplementationAddress) mintData',
               ],
               [mintData],
             ),

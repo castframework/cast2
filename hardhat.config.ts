@@ -10,7 +10,7 @@ const {
 const path = require("path");
 import "@nomicfoundation/hardhat-chai-matchers"; //Added for revertWithCustomErrors
 
-import "./src/v1/scripts/verify-implementation";
+import "./src/v1/scripts/verify-security-token-implementation";
 
 import "./src/v1/scripts/verify-satellite-implementation";
 

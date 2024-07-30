@@ -5,8 +5,6 @@ import { GetNewSatelliteImplementationConfig, NewSatelliteImplementationConfig }
 
 const config = GetNewSatelliteImplementationConfig();
 
-console.log('Used config', config);
-
 const stepOutput = require(path.join(
   process.cwd(),
   config.OutputFolder,
@@ -16,7 +14,7 @@ const stepOutput = require(path.join(
 const usedConfig: NewSatelliteImplementationConfig = stepOutput.usedConfig;
 
 const summaryTemplate = `
-## Implemention deploy transaction data field
+## Satellite Implemention deploy transaction data field
 
 ### Used Operators 
 

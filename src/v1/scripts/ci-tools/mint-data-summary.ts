@@ -1,10 +1,6 @@
 import path from 'path';
 import process from 'process';
 import {
-  GetNewSecurityTokenProxyConfig,
-  NewSecurityTokenProxyConfig,
-} from '../configuration/new-security-token-proxy-config';
-import {
   GetMintDataConfig,
   MintDataConfig,
 } from '../configuration/mint-data-config';
@@ -27,6 +23,7 @@ const summaryTemplate = `
     - Registrar Agent : ${usedConfig.RegistrarAgentAddress}
     - Settler Agent : ${usedConfig.SettlerAgentAddress}
     - Metadata Uri : ${usedConfig.MetadataUri}
+    - Satellite Implementation Address : ${usedConfig.SatelliteImplementationAddress}
 
 ### Generated Data Parameter
 

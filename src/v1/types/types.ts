@@ -1,8 +1,16 @@
-export type MintData = {
+export type TokenOperators = {
   registrarAgent: string;
   settlementAgent: string;
-  metadataUri: string;
-  satelliteImplementationAddress: string;
+};
+export type TokenMetadata = {
+  uri: string;
+  formerSmartContractAddress: string;
+  webUri: string
+}
+export type SatelliteDetails = {
+  name: string;
+  symbol: string;
+  implementationAddress: string;
 };
 export type TransferData = {
   kind: string;

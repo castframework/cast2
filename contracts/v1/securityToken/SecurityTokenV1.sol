@@ -65,6 +65,8 @@ contract SecurityTokenV1 is
         string name;
         string symbol;
         mapping(uint256 id => address) satellites;
+        mapping(uint256 id => string) webUris;
+        mapping(uint256 id => address) formerSmartcontractAddresses;
     }
 
     string constant TRANFER_TYPE_DIRECT = "Direct";
@@ -86,7 +88,6 @@ contract SecurityTokenV1 is
 
     error UnsupportedMethod();
 
-    error SatelliteAlreadyExist();
     error InvalidSatelliteAddress();
 
     /**
@@ -246,29 +247,39 @@ contract SecurityTokenV1 is
     ) external whenNotPaused onlyRegistrar returns (bool) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         if (_data.length != 0) {
+            
             require(!$.minted[_id], TokenAlreadyMinted(_id));
-            MintData memory mintData = abi.decode(_data, (MintData));
-            _setRegistrarAgent(_id, mintData.registrarAgent);
-            _setSettlementAgent(_id, mintData.settlementAgent);
-            ERC1155URIStorageUpgradeable._setURI(_id, mintData.metadataUri);
-            if (mintData.satelliteImplementationAddress != address(0)) {
-                require(
-                    ERC165Checker.supportsInterface(
-                        mintData.satelliteImplementationAddress,
-                        type(ISatelliteV1).interfaceId
-                    ),
-                    InvalidSatelliteAddress()
-                );
-                address satelitteAddress = _launchSatellite(
-                    _id,
-                    mintData.satelliteImplementationAddress
-                );
-                ISatelliteV1(satelitteAddress).transferFrom(
-                    address(0),
-                    _to,
-                    _amount
-                );
-            }
+            
+            (
+                TokenOperators memory tokenOperators,
+                TokenMetadata memory tokenMetadata,
+                SatelliteDetails memory satelitteDetails
+            ) = abi.decode(_data, (TokenOperators, TokenMetadata, SatelliteDetails));
+
+            require(
+                ERC165Checker.supportsInterface(
+                    satelitteDetails.implementationAddress,
+                    type(ISatelliteV1).interfaceId
+                ),
+                InvalidSatelliteAddress()
+            );
+            $.formerSmartcontractAddresses[_id] = tokenMetadata.formerSmartcontractAddress;
+            $.webUris[_id] = tokenMetadata.webUri;
+            _setRegistrarAgent(_id, tokenOperators.registrarAgent);
+            _setSettlementAgent(_id, tokenOperators.settlementAgent);
+            ERC1155URIStorageUpgradeable._setURI(_id, tokenMetadata.uri);
+
+            address satelitteAddress = _launchSatellite(
+                _id,
+                satelitteDetails.implementationAddress,
+                satelitteDetails.name,
+                satelitteDetails.symbol
+            );
+            ISatelliteV1(satelitteAddress).transferFrom(
+                address(0),
+                _to,
+                _amount
+            );
             $.minted[_id] = true;
         } else {
             require($.minted[_id], TokenNotAlreadyMinted(_id));
@@ -347,6 +358,14 @@ contract SecurityTokenV1 is
     /**
      * @dev Returns the name of this token
      */
+    function formerSmartContractAddress(uint256 _tokenId) external view returns (address) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        return $.formerSmartcontractAddresses[_tokenId];
+    }
+
+    /**
+     * @dev Returns the name of this token
+     */
     function name() external view returns (string memory) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         return $.name;
@@ -366,6 +385,14 @@ contract SecurityTokenV1 is
     function satellite(uint256 _tokenId) external view returns (address) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         return $.satellites[_tokenId];
+    }
+
+    /**
+     * @dev Returns the token's webUri
+     */
+    function webUri(uint256 _tokenId) external view returns (string memory) {
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        return $.webUris[_tokenId];
     }
 
     /**
@@ -640,22 +667,18 @@ contract SecurityTokenV1 is
      */
     function _launchSatellite(
         uint256 _tokenId,
-        address _satelliteImplementation
+        address _satelliteImplementation,
+        string memory _name,
+        string memory _symbol
     ) private returns (address) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-
-        require($.satellites[_tokenId] == address(0), SatelliteAlreadyExist());
-
-        // This assume tokenId is an ASCII encoded ISIN
-        // Note : if not, this may lead to unexpected behaviour from chain explorer
-        string memory idAsName = string(abi.encodePacked(_tokenId));
 
         address satelliteAddress = Clones.clone(_satelliteImplementation);
         ISatelliteV1(satelliteAddress).initialize(
             address(this),
             _tokenId,
-            idAsName,
-            idAsName
+            _name,
+            _symbol
         );
         $.satellites[_tokenId] = satelliteAddress;
 
@@ -725,9 +748,7 @@ contract SecurityTokenV1 is
     ) private {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         address satelliteAddress = $.satellites[_tokenId];
-        if (satelliteAddress != address(0)) {
-            ISatelliteV1(satelliteAddress).transferFrom(_from, _to, _value);
-        }
+        ISatelliteV1(satelliteAddress).transferFrom(_from, _to, _value);
     }
     /**
      * @dev Returns whether the kind `_kind` is a direct transfer

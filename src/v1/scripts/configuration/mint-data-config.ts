@@ -4,11 +4,21 @@ import { IsETHAddress } from './validations';
 const EnvConfigVariableName = 'MINT_DATA_CONFIG';
 
 const MintDataConfigSchema = z.object({
-  RegistrarAgentAddress: z.string().refine(...IsETHAddress),
-  SettlerAgentAddress: z.string().refine(...IsETHAddress),
-  MetadataUri: z.string(),
-  SatelliteImplementationAddress: z.string().refine(...IsETHAddress),
-  OutputFolder: z.string(),
+  tokenOperators: z.object({
+    registrarAgent: z.string().refine(...IsETHAddress),
+    settlementAgent: z.string().refine(...IsETHAddress),
+  }),
+  tokenMetadata: z.object({
+    uri: z.string(),
+    formerSmartContractAddress: z.string().refine(...IsETHAddress),
+    webUri: z.string(),
+  }),
+  satelliteDetails: z.object({
+    implementationAddress: z.string().refine(...IsETHAddress),
+    name: z.string(),
+    symbol: z.string(),
+  }),
+  outputFolder: z.string(),
 });
 
 export type MintDataConfig = z.infer<typeof MintDataConfigSchema>;

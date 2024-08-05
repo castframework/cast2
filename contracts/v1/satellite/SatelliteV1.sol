@@ -8,25 +8,25 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 import "./ISatelliteV1.sol";
 
 contract SatelliteV1 is ISatelliteV1, Initializable, ERC165 {
-    ISecurityTokenV1 public multiToken;
+    ISecurityTokenV1 public erc1155Parent;
     uint256 public tokenId;
     string public name;
     string public symbol;
 
-    modifier onlyMultiToken() {
-        require(msg.sender == address(multiToken), Unauthorized());
+    modifier onlyERC1155Parent() {
+        require(msg.sender == address(erc1155Parent), Unauthorized());
         _;
     }
 
     constructor() {}
 
     function initialize(
-        address _multiToken,
+        address _erc1155Parent,
         uint256 _tokenId,
         string memory _name,
         string memory _symbol
     ) external initializer {
-        multiToken = ISecurityTokenV1(_multiToken);
+        erc1155Parent = ISecurityTokenV1(_erc1155Parent);
         tokenId = _tokenId;
         name = _name;
         symbol = _symbol;
@@ -36,24 +36,29 @@ contract SatelliteV1 is ISatelliteV1, Initializable, ERC165 {
         address from,
         address to,
         uint256 amount
-    ) external onlyMultiToken returns (bool) {
+    ) external onlyERC1155Parent returns (bool) {
         emit Transfer(from, to, amount);
         return true;
     }
 
     function balanceOf(address account) external view returns (uint256) {
-        return multiToken.balanceOf(account, tokenId);
+        return erc1155Parent.balanceOf(account, tokenId);
     }
 
     function totalSupply() external view returns (uint256) {
-        return multiToken.totalSupply(tokenId);
+        return erc1155Parent.totalSupply(tokenId);
     }
 
     // https://eips.ethereum.org/EIPS/eip-1046
     function tokenURI() external view returns (string memory) {
-        return multiToken.uri(tokenId);
+        return erc1155Parent.uri(tokenId);
     }
-
+    function webUri() external view returns (string memory){
+        return erc1155Parent.webUri(tokenId);
+    }
+    function formerSmartContractAddress() external view returns (address){
+         return erc1155Parent.formerSmartContractAddress(tokenId);
+    }
     function allowance(
         address,
         address

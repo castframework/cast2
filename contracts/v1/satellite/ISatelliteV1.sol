@@ -9,7 +9,7 @@ interface ISatelliteV1 is IERC20 {
     error Disabled();
     
     function initialize(
-        address _multiToken,
+        address _erc1155Parent,
         uint256 _tokenId,
         string memory _name,
         string memory _symbol
@@ -17,4 +17,8 @@ interface ISatelliteV1 is IERC20 {
 
     // https://eips.ethereum.org/EIPS/eip-1046
     function tokenURI() external view returns (string memory);
+
+    function webUri() external view returns (string memory);
+
+    function formerSmartContractAddress() external view returns (address);
 }

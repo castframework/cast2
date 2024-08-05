@@ -9,7 +9,7 @@ const config = GetMintDataConfig();
 
 const stepOutput = require(path.join(
   process.cwd(),
-  config.OutputFolder,
+  config.outputFolder,
   'mint-data-field.json',
 ));
 
@@ -20,10 +20,14 @@ const summaryTemplate = `
 
 ### Used configuration 
 
-    - Registrar Agent : ${usedConfig.RegistrarAgentAddress}
-    - Settler Agent : ${usedConfig.SettlerAgentAddress}
-    - Metadata Uri : ${usedConfig.MetadataUri}
-    - Satellite Implementation Address : ${usedConfig.SatelliteImplementationAddress}
+    - Registrar Agent : ${usedConfig.tokenOperators.registrarAgent}
+    - Settler Agent : ${usedConfig.tokenOperators.settlementAgent}
+    - Metadata Uri : ${usedConfig.tokenMetadata.uri}
+    - Metadata web Uri : ${usedConfig.tokenMetadata.webUri}
+    - former smart contract address : ${usedConfig.tokenMetadata.formerSmartContractAddress}
+    - Satellite Implementation Address : ${usedConfig.satelliteDetails.implementationAddress}
+    - Satellite name : ${usedConfig.satelliteDetails.name}
+    - Satellite symbol : ${usedConfig.satelliteDetails.symbol}
 
 ### Generated Data Parameter
 

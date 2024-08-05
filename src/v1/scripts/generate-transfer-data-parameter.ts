@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
 import fs from 'fs';
 import path from 'path';
-import { TransferKind } from '../test/utils/types';
+import { TransferKind } from '../types/types';
 import { GetTransferDataConfig } from './configuration/transfer-data-config';
 
 async function main() {

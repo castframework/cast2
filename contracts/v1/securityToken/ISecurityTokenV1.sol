@@ -18,11 +18,19 @@ interface ISecurityTokenV1 is IERC1155 {
         string kind;
         string transactionId;
     }
-    struct MintData {
+    struct TokenOperators {
         address registrarAgent;
         address settlementAgent;
-        string metadataUri;
-        address satelliteImplementationAddress;
+    }
+    struct TokenMetadata {
+        string uri;
+        address formerSmartcontractAddress;
+        string webUri;
+    }
+    struct SatelliteDetails {
+        address implementationAddress;
+        string name;
+        string symbol;
     }
 
     struct TransferRequest {
@@ -118,6 +126,28 @@ interface ISecurityTokenV1 is IERC1155 {
     ) external view returns (uint256);
 
     /**
+     * @dev Total value of tokens in with a given id.
+     */
+    function totalSupply(uint256 id) external view returns (uint256);
+
+    /**
+     * @dev Returns the token's uri.
+     */
+    function uri(uint256 tokenId) external view returns (string memory);
+
+    /**
+     * @dev Returns the token's webUri.
+     */
+    function webUri(uint256 tokenId) external view returns (string memory);
+
+    /**
+     * @dev Returns the token's formerSmartContractAddress.
+     */
+    function formerSmartContractAddress(
+        uint256 tokenId
+    ) external view returns (address);
+
+    /**
      * @dev Returns the version number of this contract
      */
     function version() external pure returns (string memory);
@@ -128,14 +158,4 @@ interface ISecurityTokenV1 is IERC1155 {
     function getTokenIdByIsin(
         string calldata isinCode
     ) external pure returns (uint256);
-
-    /**
-     * @dev Total value of tokens in with a given id.
-     */
-    function totalSupply(uint256 id) external view returns (uint256);
-    
-    /**
-     * @dev Returns the token's uri.
-     */
-    function uri(uint256 tokenId) external view  returns (string memory);
 }

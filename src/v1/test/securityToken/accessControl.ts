@@ -5,15 +5,18 @@ import {
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import {
+  deploySatelliteV1Fixture,
   deploySecurityTokenFixture,
   deploySecurityTokenV2Fixture,
   deployTestContractMissuseAccessControlInternal,
 } from '../utils/builders';
 import { getOperatorSigners } from '../utils/signers';
-import { ZERO_ADDRESS } from '../utils/constants';
+import { FORMER_SMART_CONTRACT_ADDRESS, MINT_DATA_TYPES, ZERO_ADDRESS } from '../utils/constants';
 import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
-import { MintData } from '../utils/types';
+import { SatelliteDetails, TokenMetadata, TokenOperators } from '../../types/types';
+import { symbol } from 'zod';
+import { SatelliteV1 } from 'dist/types';
 
 context('SecurityTokenV1', () => {
   let securityTokenProxy: SecurityTokenV1;
@@ -29,6 +32,7 @@ context('SecurityTokenV1', () => {
   };
   let mintFunction: () => {};
   let mintData: MintData;
+  let satelliteDetails: SatelliteDetails;
   const AbiCoder = new ethers.AbiCoder();
 
   let registrarAddress: string;
@@ -133,6 +137,14 @@ context('SecurityTokenV1', () => {
     let registrarAddress;
     let settlementAgentAddress;
     let newRegistrarAddress;
+  
+    let satelliteImplementationAddress;
+    let satelliteImplementation: SatelliteV1;
+
+    let satelitteDetails: SatelliteDetails
+    let tokenOperators: TokenOperators;
+    let tokenMetadata: TokenMetadata;
+
     beforeEach(async () => {
       signers = await getOperatorSigners();
       securityTokenProxy = await loadFixture(deploySecurityTokenFixture);
@@ -141,14 +153,24 @@ context('SecurityTokenV1', () => {
       registrarAddress = await signers.registrar.getAddress();
       settlementAgentAddress = await signers.settlementAgent.getAddress();
       newRegistrarAddress = await signers.investor3.getAddress();
+      satelliteImplementation = await loadFixture(deploySatelliteV1Fixture);
 
-      mintData = {
+      satelliteImplementationAddress = await satelliteImplementation.getAddress();
+      tokenOperators = {
         registrarAgent: registrarAddress,
         settlementAgent: settlementAgentAddress,
-        metadataUri: '0x',
-        satelliteImplementationAddress: ZERO_ADDRESS
       };
-
+      tokenMetadata = {
+        uri: '0x',
+        formerSmartContractAddress: FORMER_SMART_CONTRACT_ADDRESS,
+        webUri:""
+      }
+      satelitteDetails = {
+        implementationAddress: satelliteImplementationAddress,
+        name:"toto",
+        symbol:"tata",
+      }
+  
       mintFunction = () =>
         securityTokenProxy
           .connect(signers.registrar)
@@ -157,10 +179,8 @@ context('SecurityTokenV1', () => {
             tokenId,
             amount,
             AbiCoder.encode(
-              [
-                'tuple(address registrarAgent, address settlementAgent, string metadataUri, address satelliteImplementationAddress) mintData',
-              ],
-              [mintData],
+             MINT_DATA_TYPES,
+              [tokenOperators, tokenMetadata, satelitteDetails],
             ),
           );
       await mintFunction();
@@ -183,9 +203,6 @@ context('SecurityTokenV1', () => {
     });
 
     it("should emit SettlementAgentUpdated when token's settlement agent has been updated", async () => {
-      const oldSettlementAgent = await securityTokenProxy.getSettlementAgent(
-        tokenId,
-      );
 
       const setSettlementAgent = securityTokenProxy
         .connect(signers.registrar)

@@ -1,5 +1,5 @@
 import { ZodError, z } from 'zod';
-import { TransferKind } from '../../test/utils/types';
+import { TransferKind } from '../../types/types';
 
 const IsTransferKind = [
   (val: string) =>

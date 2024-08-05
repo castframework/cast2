@@ -9,18 +9,23 @@ import '@nomicfoundation/hardhat-chai-matchers'; //Added for revertWithCustomErr
 import {
   LockTransferData,
   MintData,
+  SatelliteDetails,
+  TokenMetadata,
+  TokenOperators,
   TransferData,
   TransferKind,
   TransferStatus,
-} from '../utils/types';
+} from '../../types/types';
 import { randomUUID } from 'crypto';
-import { NAME, SYMBOL } from '../utils/constants';
+import { FORMER_SMART_CONTRACT_ADDRESS, MINT_DATA_TYPES, NAME, SYMBOL } from '../utils/constants';
 import { SatelliteV1 } from 'dist/types';
 
 context('SecurityTokenV1', () => {
   let securityTokenProxy: SecurityTokenV1;
-  let satelliteImplementation: SatelliteV1;
 
+  let satelliteImplementationAddress;
+  let satelliteImplementation: SatelliteV1;
+  
   const emptyMintData = '0x';
   let signers: {
     registrar: Signer;
@@ -39,9 +44,11 @@ context('SecurityTokenV1', () => {
   let newRegistrarAddress;
   const AbiCoder = new ethers.AbiCoder();
   let mintFunction: () => {};
-  let mintData: MintData;
   let uri;
-  let satelliteImplementationAddress;
+
+  let satelitteDetails: SatelliteDetails
+  let tokenOperators: TokenOperators;
+  let tokenMetadata: TokenMetadata;
 
   beforeEach(async () => {
     signers = await getOperatorSigners();
@@ -55,12 +62,20 @@ context('SecurityTokenV1', () => {
     settlementAgentAddress = await signers.settlementAgent.getAddress();
     newRegistrarAddress = await signers.investor3.getAddress();
     uri = '0x';
-    mintData = {
+    tokenOperators = {
       registrarAgent: registrarAgentAddress,
       settlementAgent: settlementAgentAddress,
-      metadataUri: '0x',
-      satelliteImplementationAddress
     };
+    tokenMetadata = {
+      uri: '0x',
+      formerSmartContractAddress: FORMER_SMART_CONTRACT_ADDRESS,
+      webUri:""
+    }
+    satelitteDetails = {
+      implementationAddress: satelliteImplementationAddress,
+      name:"toto",
+      symbol:"tata",
+    }
 
     mintFunction = () =>
       securityTokenProxy
@@ -70,19 +85,21 @@ context('SecurityTokenV1', () => {
           tokenId,
           amount,
           AbiCoder.encode(
-            [
-              'tuple(address registrarAgent, address settlementAgent, string metadataUri, address satelliteImplementationAddress) mintData',
-            ],
-            [mintData],
+           MINT_DATA_TYPES,
+            [tokenOperators, tokenMetadata, satelitteDetails],
           ),
         );
     await mintFunction();
   });
-  context('Name and symbol', async () => {
+  context('Name,symbol and formerSmartContractAddress', async () => {
     it('should match the token name', async () =>
       await expect(await securityTokenProxy.name()).to.be.eq(NAME));
     it('should match the token symbol', async () =>
       await expect(await securityTokenProxy.symbol()).to.be.eq(SYMBOL));
+
+    it('should match the formerSmartContractAddress', async () =>
+      await expect(await securityTokenProxy.formerSmartContractAddress(tokenId)).to.be.eq(FORMER_SMART_CONTRACT_ADDRESS));
+    
   });
   context('Unsupported Methods', async () => {
     it('should not support safeBatchTransferFrom', async () =>

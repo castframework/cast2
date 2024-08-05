@@ -2,6 +2,8 @@ import { ethers } from 'hardhat';
 import fs from 'fs';
 import path from 'path';
 import { GetMintDataConfig } from './configuration/mint-data-config';
+import { SatelliteDetails, TokenMetadata, TokenOperators } from '../types/types';
+import { MINT_DATA_TYPES } from '../test/utils/constants';
 
 async function main() {
   console.log('Starting...');
@@ -10,13 +12,12 @@ async function main() {
 
   console.log('Used config', config);
 
-  const outputFile = path.join(config.OutputFolder, 'mint-data-field.json');
+  const outputFile = path.join(config.outputFolder, 'mint-data-field.json');
 
   const newMintData = generateDataForMint(
-    config.RegistrarAgentAddress,
-    config.SettlerAgentAddress,
-    config.MetadataUri,
-    config.SatelliteImplementationAddress
+    config.tokenOperators,
+    config.tokenMetadata,
+    config.satelliteDetails,
   );
 
   console.log(`Generated data field :\n${newMintData}`);
@@ -39,18 +40,16 @@ async function main() {
 }
 
 function generateDataForMint(
-  registrarAgent: string,
-  settlementAgent: string,
-  metadataUri: string,
-  satelliteImplementationAddress: string
+  tokenOperators: TokenOperators,
+  tokenMetadata: TokenMetadata,
+  satelliteDetails: SatelliteDetails,
 ) {
   var AbiCoder = new ethers.AbiCoder();
 
   return AbiCoder.encode(
-    [
-      'tuple(address registrarAgent, address settlementAgent, string metadataUri, address satelliteImplementationAddress) mintData',
-    ],
-    [{ registrarAgent, settlementAgent, metadataUri, satelliteImplementationAddress }],
+    MINT_DATA_TYPES
+    ,
+    [tokenOperators, tokenMetadata, satelliteDetails],
   );
 }
 

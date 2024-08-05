@@ -141,6 +141,12 @@ context('Prohibited methods when contract is paused', async () => {
         .connect(signers.registrar)
         .safeTransferFrom(ZERO_ADDRESS, ZERO_ADDRESS, 1, 1, '0x'),
     ).to.be.revertedWithCustomError(securityToken, 'EnforcedPause'));
+    it('should call setWebUri only when contract not paused', async () =>
+      await expect(
+        securityToken
+          .connect(signers.registrar)
+          .setWebUri(1, "webURI"),
+      ).to.be.revertedWithCustomError(securityToken, 'EnforcedPause'));
   it('should call forceSafeTransferFrom only when contract not paused', async () =>
     await expect(
       securityToken

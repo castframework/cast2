@@ -207,7 +207,15 @@ contract SecurityTokenV1 is
     ) external whenNotPaused onlyRegistrar {
         ERC1155URIStorageUpgradeable._setURI(tokenId, tokenURI);
     }
-
+    
+    /**
+     * @dev set the token's webUri.
+     */
+    function setWebUri(uint256 _tokenId, string calldata _webUri) external whenNotPaused onlyRegistrar{
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        $.webUris[_tokenId] = _webUri;
+        emit WebURI(_tokenId, _webUri);
+    }
     /**
      * @dev Sets `_baseURI` as the `_baseURI` for all tokens
      */
@@ -269,22 +277,18 @@ contract SecurityTokenV1 is
             _setSettlementAgent(_id, tokenOperators.settlementAgent);
             ERC1155URIStorageUpgradeable._setURI(_id, tokenMetadata.uri);
 
-            address satelitteAddress = _launchSatellite(
+            _launchSatellite(
                 _id,
                 satelitteDetails.implementationAddress,
                 satelitteDetails.name,
                 satelitteDetails.symbol
-            );
-            ISatelliteV1(satelitteAddress).transferFrom(
-                address(0),
-                _to,
-                _amount
             );
             $.minted[_id] = true;
         } else {
             require($.minted[_id], TokenNotAlreadyMinted(_id));
         }
         super._mint(_to, _id, _amount, _data);
+        _handleSatelliteTransfer(_id, address(0), _to, _amount);
         return true;
     }
 
@@ -393,6 +397,13 @@ contract SecurityTokenV1 is
     function webUri(uint256 _tokenId) external view returns (string memory) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         return $.webUris[_tokenId];
+    }
+
+    function getLockedAmount(string memory _transactionId) external view returns(TransferRequest memory){
+        SecurityTokenStorage storage $ = _getSecurityTokenStorage();
+        TransferRequest memory transferRequest = $.transferRequests[_transactionId];
+        require(transferRequest.status == TransferStatus.Created, InvalidTransferRequestStatus());
+        return transferRequest;
     }
 
     /**
@@ -670,7 +681,7 @@ contract SecurityTokenV1 is
         address _satelliteImplementation,
         string memory _name,
         string memory _symbol
-    ) private returns (address) {
+    ) private {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
 
         address satelliteAddress = Clones.clone(_satelliteImplementation);
@@ -683,8 +694,6 @@ contract SecurityTokenV1 is
         $.satellites[_tokenId] = satelliteAddress;
 
         emit NewSatellite(_tokenId, satelliteAddress);
-
-        return satelliteAddress;
     }
     /**
      * @dev Same semantic as ERC1155's safeTransferFrom function although there are 3 cases :
@@ -740,6 +749,10 @@ contract SecurityTokenV1 is
             revert InvalidTransferType();
         }
     }
+
+    /**
+     * @dev proceeds a transfer in satellite token
+     */
     function _handleSatelliteTransfer(
         uint256 _tokenId,
         address _from,

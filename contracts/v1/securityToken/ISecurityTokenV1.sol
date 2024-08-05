@@ -60,6 +60,8 @@ interface ISecurityTokenV1 is IERC1155 {
     );
 
     event NewSatellite(uint256 indexed tokenId, address satelite);
+
+    event WebURI(uint256 indexed tokenId, string webUri);
     /**
      * @dev Actually performs the transfer request corresponding to the given `_transactionId`
      * Called by the settlement agent operator
@@ -106,6 +108,16 @@ interface ISecurityTokenV1 is IERC1155 {
         uint256 _value,
         bytes memory _data
     ) external;
+
+    /**
+     * @dev set the token's webUri.
+     */
+    function setWebUri(uint256 _tokenId, string calldata _webUri) external;
+
+    /**
+     * @dev get locked amout
+     */
+    function getLockedAmount(string memory _transactionId) external view returns(TransferRequest memory);
 
     /**
      * @dev Returns the name of the token

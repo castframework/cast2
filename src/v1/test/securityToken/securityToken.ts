@@ -8,7 +8,6 @@ import { ethers } from 'hardhat';
 import '@nomicfoundation/hardhat-chai-matchers'; //Added for revertWithCustomErrors
 import {
   LockTransferData,
-  MintData,
   SatelliteDetails,
   TokenMetadata,
   TokenOperators,
@@ -25,7 +24,7 @@ context('SecurityTokenV1', () => {
 
   let satelliteImplementationAddress;
   let satelliteImplementation: SatelliteV1;
-  
+
   const emptyMintData = '0x';
   let signers: {
     registrar: Signer;
@@ -52,7 +51,7 @@ context('SecurityTokenV1', () => {
 
   beforeEach(async () => {
     signers = await getOperatorSigners();
-    
+
     securityTokenProxy = await loadFixture(deploySecurityTokenFixture);
     satelliteImplementation = await loadFixture(deploySatelliteV1Fixture);
 
@@ -69,12 +68,12 @@ context('SecurityTokenV1', () => {
     tokenMetadata = {
       uri: '0x',
       formerSmartContractAddress: FORMER_SMART_CONTRACT_ADDRESS,
-      webUri:""
+      webUri: ""
     }
     satelitteDetails = {
       implementationAddress: satelliteImplementationAddress,
-      name:"toto",
-      symbol:"tata",
+      name: "toto",
+      symbol: "tata",
     }
 
     mintFunction = () =>
@@ -85,7 +84,7 @@ context('SecurityTokenV1', () => {
           tokenId,
           amount,
           AbiCoder.encode(
-           MINT_DATA_TYPES,
+            MINT_DATA_TYPES,
             [tokenOperators, tokenMetadata, satelitteDetails],
           ),
         );
@@ -99,7 +98,7 @@ context('SecurityTokenV1', () => {
 
     it('should match the formerSmartContractAddress', async () =>
       await expect(await securityTokenProxy.formerSmartContractAddress(tokenId)).to.be.eq(FORMER_SMART_CONTRACT_ADDRESS));
-    
+
   });
   context('Unsupported Methods', async () => {
     it('should not support safeBatchTransferFrom', async () =>
@@ -193,6 +192,14 @@ context('SecurityTokenV1', () => {
         await securityTokenProxy.balanceOf(receiverAddress, tokenId),
         (amount * 2).toString(),
       );
+      let satellite: SatelliteV1 = await ethers.getContractAt(
+        'SatelliteV1',
+        (await securityTokenProxy.satellite(tokenId)),
+      );
+      expect(
+        await satellite.balanceOf(receiverAddress),
+        (amount * 2).toString(),
+      );
     });
     it('should be not be able to mint with empty data when token not already minted', async () => {
       let newTokenId = 11;
@@ -236,7 +243,7 @@ context('SecurityTokenV1', () => {
         .withArgs(tokenId, amount, amount * 2);
     });
   });
-  context('Update URIs', async () => {
+  context('Update Metadata URIs', async () => {
     it('should be able to set base uri', async () => {
       const newBaseUri = 'https://lokon.fr/{id}';
       const tokenURI = 'toto';
@@ -288,6 +295,36 @@ context('SecurityTokenV1', () => {
       );
     });
   });
+  context('Update Web URIs', async () => {
+    it('should be able to set web uri', async () => {
+      const tokenWebURI = 'toto';
+
+      await securityTokenProxy
+        .connect(signers.registrar)
+        .setWebUri(tokenId, tokenWebURI);
+
+      expect(await securityTokenProxy.webUri(tokenId)).to.be.eq(
+        tokenWebURI,
+      );
+    });
+    it('should email WebUri event', async () => {
+      const tokenWebURI = 'toto';
+      const setWebToken = securityTokenProxy
+        .connect(signers.registrar)
+        .setWebUri(tokenId, tokenWebURI);
+      expect(setWebToken).to.emit(securityTokenProxy, "WebUri").withArgs(tokenId, tokenWebURI);
+    });
+    it('only registrar should be able to set web uri', async () => {
+      const setBaseUrl = securityTokenProxy
+        .connect(signers.settlementAgent)
+        .setWebUri(tokenId, "uri");
+
+      expect(setBaseUrl).to.be.revertedWithCustomError(
+        securityTokenProxy,
+        'UnauthorizedRegistrar',
+      );
+    });
+  });
   context('Safe Transfer Tokens', async () => {
     let lockTransferData: LockTransferData;
     let transferAmount: number = 1;
@@ -313,6 +350,42 @@ context('SecurityTokenV1', () => {
           'UnauthorizedRegistrarAgent',
         )
         .withArgs(tokenId);
+    });
+    it("should be able to get lockedTransfer request", async () => {
+      await securityTokenProxy
+        .connect(signers.registrarAgent)
+        .safeTransferFrom(
+          receiverAddress,
+          settlementAgentAddress,
+          tokenId,
+          transferAmount,
+          data,
+        );
+      const lockedTransfer = await securityTokenProxy.getLockedAmount(transactionId);
+      await expect(lockedTransfer[0]).to.be.eq(receiverAddress);
+      await expect(lockedTransfer[1]).to.be.eq(settlementAgentAddress);
+      await expect(lockedTransfer[2]).to.be.eq(tokenId.toString());
+      await expect(lockedTransfer[3]).to.be.eq(transferAmount.toString());
+      await expect(lockedTransfer[4]).to.be.eq(TransferStatus.Created.toString());
+    });
+    it('should not be able to get lockedTransfer request', async () => {
+      await securityTokenProxy
+        .connect(signers.registrarAgent)
+        .safeTransferFrom(
+          receiverAddress,
+          settlementAgentAddress,
+          tokenId,
+          transferAmount,
+          data,
+        );
+      await securityTokenProxy
+        .connect(signers.settlementAgent)
+        .releaseTransaction(transactionId);
+
+      await expect(securityTokenProxy.getLockedAmount(transactionId)).to.be.revertedWithCustomError(
+        securityTokenProxy,
+        'InvalidTransferRequestStatus',
+      );
     });
     it("only token's registrar could make a force transfer", async () => {
       const safeTransfer = securityTokenProxy

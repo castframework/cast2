@@ -31,8 +31,6 @@ context('SecurityTokenV1', () => {
     technical: Signer;
   };
   let mintFunction: () => {};
-  let mintData: MintData;
-  let satelliteDetails: SatelliteDetails;
   const AbiCoder = new ethers.AbiCoder();
 
   let registrarAddress: string;

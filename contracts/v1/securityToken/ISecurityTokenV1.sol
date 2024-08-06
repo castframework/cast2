@@ -40,6 +40,12 @@ interface ISecurityTokenV1 is IERC1155 {
         uint256 value;
         TransferStatus status;
     }
+    struct LockedAmount {
+        uint256 id;
+        address from;
+        address to;
+        uint256 value;
+    }
 
     /**
      * @dev Emitted when new lock transfer request is created.
@@ -133,7 +139,7 @@ interface ISecurityTokenV1 is IERC1155 {
      */
     function getLockedAmount(
         string memory _transactionId
-    ) external view returns (TransferRequest memory);
+    ) external view returns (LockedAmount memory);
 
     /**
      * @dev Returns the name of the token

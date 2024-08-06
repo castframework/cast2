@@ -412,7 +412,7 @@ contract SecurityTokenV1 is
      */
     function getLockedAmount(
         string memory _transactionId
-    ) external view returns (TransferRequest memory) {
+    ) external view returns (LockedAmount memory) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         TransferRequest memory transferRequest = $.transferRequests[
             _transactionId
@@ -421,7 +421,7 @@ contract SecurityTokenV1 is
             transferRequest.status == TransferStatus.Created,
             InvalidTransferRequestStatus()
         );
-        return transferRequest;
+        return LockedAmount(transferRequest.id, transferRequest.from, transferRequest.to, transferRequest.value);
     }
 
     /**

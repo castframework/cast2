@@ -374,13 +374,12 @@ context('SecurityTokenV1', () => {
       const lockedTransfer = await securityTokenProxy.getLockedAmount(
         transactionId,
       );
-      await expect(lockedTransfer[0]).to.be.eq(receiverAddress);
-      await expect(lockedTransfer[1]).to.be.eq(settlementAgentAddress);
-      await expect(lockedTransfer[2]).to.be.eq(tokenId.toString());
+
+      await expect(lockedTransfer[0]).to.be.eq(tokenId.toString());
+      await expect(lockedTransfer[1]).to.be.eq(receiverAddress);
+      await expect(lockedTransfer[2]).to.be.eq(settlementAgentAddress);
       await expect(lockedTransfer[3]).to.be.eq(transferAmount.toString());
-      await expect(lockedTransfer[4]).to.be.eq(
-        TransferStatus.Created.toString(),
-      );
+
     });
     it('should not be able to get lockedTransfer request', async () => {
       await securityTokenProxy

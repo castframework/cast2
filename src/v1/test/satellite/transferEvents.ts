@@ -1,12 +1,24 @@
-import { deploySatelliteV1Fixture, deploySecurityTokenFixture } from '../utils/builders';
+import {
+  deploySatelliteV1Fixture,
+  deploySecurityTokenFixture,
+} from '../utils/builders';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { Signer, EventLog } from 'ethers';
 import { ethers } from 'hardhat';
 import { getOperatorSigners } from '../utils/signers';
-import { SatelliteDetails, TokenMetadata, TokenOperators, TransferKind } from '../../types/types';
+import {
+  SatelliteDetails,
+  TokenMetadata,
+  TokenOperators,
+  TransferKind,
+} from '../../types/types';
 import { SatelliteV1, SecurityTokenV1 } from 'dist/types';
-import { FORMER_SMART_CONTRACT_ADDRESS, MINT_DATA_TYPES, ZERO_ADDRESS } from '../utils/constants';
+import {
+  FORMER_SMART_CONTRACT_ADDRESS,
+  MINT_DATA_TYPES,
+  ZERO_ADDRESS,
+} from '../utils/constants';
 import { operationsAddress } from '../securityToken/constants';
 import { token } from 'dist/types/@openzeppelin/contracts';
 
@@ -30,18 +42,18 @@ context('Satellite', () => {
   let newRegistrarAddress;
   const AbiCoder = new ethers.AbiCoder();
   let mintFunction: any; // TODO add right type
- 
+
   let uri;
   let satelliteImplementationAddress;
-  let transactionId = "laTransaction";
+  let transactionId = 'laTransaction';
 
-  let satelitteDetails: SatelliteDetails
+  let satelitteDetails: SatelliteDetails;
   let tokenOperators: TokenOperators;
   let tokenMetadata: TokenMetadata;
 
   beforeEach(async () => {
     signers = await getOperatorSigners();
-    
+
     securityTokenProxy = await loadFixture(deploySecurityTokenFixture);
     satelliteImplementation = await loadFixture(deploySatelliteV1Fixture);
 
@@ -58,13 +70,13 @@ context('Satellite', () => {
     tokenMetadata = {
       uri: '0x',
       formerSmartContractAddress: FORMER_SMART_CONTRACT_ADDRESS,
-      webUri:""
-    }
+      webUri: '',
+    };
     satelitteDetails = {
       implementationAddress: satelliteImplementationAddress,
-      name:"toto",
-      symbol:"tata",
-    }
+      name: 'toto',
+      symbol: 'tata',
+    };
 
     mintFunction = () =>
       securityTokenProxy
@@ -73,55 +85,53 @@ context('Satellite', () => {
           receiverAddress,
           tokenId,
           amount,
-          AbiCoder.encode(
-           MINT_DATA_TYPES,
-            [tokenOperators, tokenMetadata, satelitteDetails],
-          ),
+          AbiCoder.encode(MINT_DATA_TYPES, [
+            tokenOperators,
+            tokenMetadata,
+            satelitteDetails,
+          ]),
         );
   });
   it('should fail with invalid satellite address', async () => {
     satelitteDetails = {
       implementationAddress: registrarAgentAddress,
-      name: "toto",
-      symbol: "tata",
-    }
+      name: 'toto',
+      symbol: 'tata',
+    };
     const mintToken = securityTokenProxy
       .connect(signers.registrar)
       .mint(
         receiverAddress,
         tokenId,
         amount,
-        AbiCoder.encode(
-          MINT_DATA_TYPES,
-          [tokenOperators, tokenMetadata, satelitteDetails]
-        ),
+        AbiCoder.encode(MINT_DATA_TYPES, [
+          tokenOperators,
+          tokenMetadata,
+          satelitteDetails,
+        ]),
       );
-    await expect(mintToken).to.be.revertedWithCustomError(securityTokenProxy, "InvalidSatelliteAddress");
-  })
+    await expect(mintToken).to.be.revertedWithCustomError(
+      securityTokenProxy,
+      'InvalidSatelliteAddress',
+    );
+  });
   it('Should be able to create a new satellite', async () => {
     let satelliteTransaction = await mintFunction();
-    await expect(satelliteTransaction).to.emit(
-      securityTokenProxy,
-      'NewSatellite',
-    ).withArgs(
-      tokenId,
-      (val) => ethers.isAddress(val)
-    );
+    await expect(satelliteTransaction)
+      .to.emit(securityTokenProxy, 'NewSatellite')
+      .withArgs(tokenId, (val) => ethers.isAddress(val));
   });
 
   it('Should emit a transfer event when safeTransferFrom (Direct)', async () => {
-    let satelliteAddressTransaction = await (
-      await mintFunction()
-    ).wait();
+    let satelliteAddressTransaction = await (await mintFunction()).wait();
     await expect(satelliteAddressTransaction).to.emit(
       securityTokenProxy,
       'NewSatellite',
     );
 
-    let satelliteAddress = (satelliteAddressTransaction!
-      .logs as EventLog[])
-      .find(elog => elog.fragment.name === 'NewSatellite')!
-      .args[1];
+    let satelliteAddress = (
+      satelliteAddressTransaction!.logs as EventLog[]
+    ).find((elog) => elog.fragment.name === 'NewSatellite')!.args[1];
 
     let satellite: SatelliteV1 = await ethers.getContractAt(
       'SatelliteV1',
@@ -144,36 +154,31 @@ context('Satellite', () => {
     await expect(safeTransferTransaction).to.emit(satellite, 'Transfer');
   });
 
-  
   it('Should match the satellite address', async () => {
-    let satelliteAddressTransaction = await (
-      await mintFunction()
-    ).wait();
+    let satelliteAddressTransaction = await (await mintFunction()).wait();
     await expect(satelliteAddressTransaction).to.emit(
       securityTokenProxy,
       'NewSatellite',
     );
 
-    let satelliteAddress = (satelliteAddressTransaction!
-      .logs as EventLog[])
-      .find(elog => elog.fragment.name === 'NewSatellite')!
-      .args[1];
+    let satelliteAddress = (
+      satelliteAddressTransaction!.logs as EventLog[]
+    ).find((elog) => elog.fragment.name === 'NewSatellite')!.args[1];
 
-    await expect(await securityTokenProxy.satellite(tokenId)).to.eq(satelliteAddress);
+    await expect(await securityTokenProxy.satellite(tokenId)).to.eq(
+      satelliteAddress,
+    );
   });
   it('Should be able to get the tokenURI', async () => {
-    let satelliteAddressTransaction = await (
-      await mintFunction()
-    ).wait();
+    let satelliteAddressTransaction = await (await mintFunction()).wait();
     await expect(satelliteAddressTransaction).to.emit(
       securityTokenProxy,
       'NewSatellite',
     );
 
-    let satelliteAddress = (satelliteAddressTransaction!
-      .logs as EventLog[])
-      .find(elog => elog.fragment.name === 'NewSatellite')!
-      .args[1];
+    let satelliteAddress = (
+      satelliteAddressTransaction!.logs as EventLog[]
+    ).find((elog) => elog.fragment.name === 'NewSatellite')!.args[1];
 
     let satellite: SatelliteV1 = await ethers.getContractAt(
       'SatelliteV1',
@@ -181,20 +186,17 @@ context('Satellite', () => {
     );
     await expect(await satellite.tokenURI()).to.eq(tokenMetadata.uri);
   });
-  
+
   it('Should be able to get the webUri', async () => {
-    let satelliteAddressTransaction = await (
-      await mintFunction()
-    ).wait();
+    let satelliteAddressTransaction = await (await mintFunction()).wait();
     await expect(satelliteAddressTransaction).to.emit(
       securityTokenProxy,
       'NewSatellite',
     );
 
-    let satelliteAddress = (satelliteAddressTransaction!
-      .logs as EventLog[])
-      .find(elog => elog.fragment.name === 'NewSatellite')!
-      .args[1];
+    let satelliteAddress = (
+      satelliteAddressTransaction!.logs as EventLog[]
+    ).find((elog) => elog.fragment.name === 'NewSatellite')!.args[1];
 
     let satellite: SatelliteV1 = await ethers.getContractAt(
       'SatelliteV1',
@@ -203,82 +205,76 @@ context('Satellite', () => {
     await expect(await satellite.webUri()).to.eq(tokenMetadata.webUri);
   });
   it('Should be able to get the formerSmartContractAddress', async () => {
-    let satelliteAddressTransaction = await (
-      await mintFunction()
-    ).wait();
+    let satelliteAddressTransaction = await (await mintFunction()).wait();
     await expect(satelliteAddressTransaction).to.emit(
       securityTokenProxy,
       'NewSatellite',
     );
 
-    let satelliteAddress = (satelliteAddressTransaction!
-      .logs as EventLog[])
-      .find(elog => elog.fragment.name === 'NewSatellite')!
-      .args[1];
+    let satelliteAddress = (
+      satelliteAddressTransaction!.logs as EventLog[]
+    ).find((elog) => elog.fragment.name === 'NewSatellite')!.args[1];
 
     let satellite: SatelliteV1 = await ethers.getContractAt(
       'SatelliteV1',
       satelliteAddress,
     );
-    await expect(await satellite.formerSmartContractAddress()).to.eq(tokenMetadata.formerSmartContractAddress);
+    await expect(await satellite.formerSmartContractAddress()).to.eq(
+      tokenMetadata.formerSmartContractAddress,
+    );
   });
 
   it('Should be able to get the balance of an account', async () => {
-    let satelliteAddressTransaction = await (
-      await mintFunction()
-    ).wait();
+    let satelliteAddressTransaction = await (await mintFunction()).wait();
     await expect(satelliteAddressTransaction).to.emit(
       securityTokenProxy,
       'NewSatellite',
     );
 
-    let satelliteAddress = (satelliteAddressTransaction!
-      .logs as EventLog[])
-      .find(elog => elog.fragment.name === 'NewSatellite')!
-      .args[1];
+    let satelliteAddress = (
+      satelliteAddressTransaction!.logs as EventLog[]
+    ).find((elog) => elog.fragment.name === 'NewSatellite')!.args[1];
 
     let satellite: SatelliteV1 = await ethers.getContractAt(
       'SatelliteV1',
       satelliteAddress,
     );
-    await expect((await satellite.balanceOf(receiverAddress)).toString()).to.eq(amount.toString());
+    await expect((await satellite.balanceOf(receiverAddress)).toString()).to.eq(
+      amount.toString(),
+    );
   });
 
   it('Should be able to get the total balance', async () => {
-    let satelliteAddressTransaction = await (
-      await mintFunction()
-    ).wait();
+    let satelliteAddressTransaction = await (await mintFunction()).wait();
     await expect(satelliteAddressTransaction).to.emit(
       securityTokenProxy,
       'NewSatellite',
     );
 
-    let satelliteAddress = (satelliteAddressTransaction!
-      .logs as EventLog[])
-      .find(elog => elog.fragment.name === 'NewSatellite')!
-      .args[1];
+    let satelliteAddress = (
+      satelliteAddressTransaction!.logs as EventLog[]
+    ).find((elog) => elog.fragment.name === 'NewSatellite')!.args[1];
 
     let satellite: SatelliteV1 = await ethers.getContractAt(
       'SatelliteV1',
       satelliteAddress,
     );
-    await expect((await satellite.totalSupply()).toString()).to.eq(amount.toString());
+    await expect((await satellite.totalSupply()).toString()).to.eq(
+      amount.toString(),
+    );
   });
 
   it('Should emit a transfer event when safeTransferFrom (Lock)', async () => {
-    let satelliteAddressTransaction = await (
-      await mintFunction()
-    ).wait();
+    let satelliteAddressTransaction = await (await mintFunction()).wait();
 
     await expect(satelliteAddressTransaction).to.emit(
       securityTokenProxy,
       'NewSatellite',
     );
 
-    let satelliteAddress = (satelliteAddressTransaction!
-      .logs as EventLog[])
-      .find(elog => elog.fragment.name === 'NewSatellite')!
-      .args[1];
+    let satelliteAddress = (
+      satelliteAddressTransaction!.logs as EventLog[]
+    ).find((elog) => elog.fragment.name === 'NewSatellite')!.args[1];
 
     let satellite: SatelliteV1 = await ethers.getContractAt(
       'SatelliteV1',
@@ -302,15 +298,12 @@ context('Satellite', () => {
       .connect(signers.settlementAgent)
       .releaseTransaction(transactionId);
 
-
     //console.log((await releaseLockTransaction.wait())!.logs);
 
     await expect(releaseLockTransaction).to.emit(satellite, 'Transfer');
   });
-
-
 });
-context("Satellite disable functions", async () => {
+context('Satellite disable functions', async () => {
   let satelliteImplementation: SatelliteV1;
   let signers: {
     registrar: Signer;
@@ -324,24 +317,47 @@ context("Satellite disable functions", async () => {
   beforeEach(async () => {
     satelliteImplementation = await deploySatelliteV1Fixture();
     signers = await getOperatorSigners();
-
-  })
-  it("should fail to initialise satellite second time", async () => {
-    const initialize = () => satelliteImplementation.connect(signers.registrarAgent).initialize(operationsAddress, 1, "toto", "tata")
+  });
+  it('should fail to initialise satellite second time', async () => {
+    const initialize = () =>
+      satelliteImplementation
+        .connect(signers.registrarAgent)
+        .initialize(operationsAddress, 1, 'toto', 'tata');
     await initialize();
-    expect(initialize()).to.be.revertedWithCustomError(satelliteImplementation, "InvalidInitialization")
-  })
-  it("should fail with approve is disabled", async () => {
-    expect(satelliteImplementation.connect(signers.registrarAgent).approve(operationsAddress, 100)).to.be.revertedWithCustomError(satelliteImplementation, "Disabled")
+    expect(initialize()).to.be.revertedWithCustomError(
+      satelliteImplementation,
+      'InvalidInitialization',
+    );
   });
-  it("should fail with allowance is disabled", async () => {
-    expect(satelliteImplementation.connect(signers.registrarAgent).allowance(operationsAddress, operationsAddress)).to.be.revertedWithCustomError(satelliteImplementation, "Disabled")
+  it('should fail with approve is disabled', async () => {
+    expect(
+      satelliteImplementation
+        .connect(signers.registrarAgent)
+        .approve(operationsAddress, 100),
+    ).to.be.revertedWithCustomError(satelliteImplementation, 'Disabled');
   });
-  it("should fail with transfer is disabled", async () => {
-    expect(satelliteImplementation.connect(signers.registrarAgent).transfer(operationsAddress, 100)).to.be.revertedWithCustomError(satelliteImplementation, "Disabled")
+  it('should fail with allowance is disabled', async () => {
+    expect(
+      satelliteImplementation
+        .connect(signers.registrarAgent)
+        .allowance(operationsAddress, operationsAddress),
+    ).to.be.revertedWithCustomError(satelliteImplementation, 'Disabled');
   });
-  it("should fail ERC1155 token could call safeTransfeFrom", async () => {
-    await satelliteImplementation.connect(signers.registrarAgent).initialize(operationsAddress, 1, "toto", "tata")
-    expect(satelliteImplementation.connect(signers.registrarAgent).transferFrom(operationsAddress, operationsAddress, 100)).to.be.revertedWithCustomError(satelliteImplementation, "Unauthorized")
+  it('should fail with transfer is disabled', async () => {
+    expect(
+      satelliteImplementation
+        .connect(signers.registrarAgent)
+        .transfer(operationsAddress, 100),
+    ).to.be.revertedWithCustomError(satelliteImplementation, 'Disabled');
   });
-})
+  it('should fail ERC1155 token could call safeTransfeFrom', async () => {
+    await satelliteImplementation
+      .connect(signers.registrarAgent)
+      .initialize(operationsAddress, 1, 'toto', 'tata');
+    expect(
+      satelliteImplementation
+        .connect(signers.registrarAgent)
+        .transferFrom(operationsAddress, operationsAddress, 100),
+    ).to.be.revertedWithCustomError(satelliteImplementation, 'Unauthorized');
+  });
+});

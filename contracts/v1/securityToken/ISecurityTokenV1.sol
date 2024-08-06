@@ -41,6 +41,9 @@ interface ISecurityTokenV1 is IERC1155 {
         TransferStatus status;
     }
 
+    /**
+     * @dev Emitted when new lock transfer request is created.
+     */
     event LockReady(
         string transactionId,
         address indexed operator,
@@ -50,6 +53,10 @@ interface ISecurityTokenV1 is IERC1155 {
         uint256 value,
         bytes data
     );
+
+    /**
+     * @dev Emitted when lock transfer request is updated.
+     */
     event LockUpdated(
         string transactionId,
         address indexed operator,
@@ -59,9 +66,16 @@ interface ISecurityTokenV1 is IERC1155 {
         TransferStatus status
     );
 
+    /**
+     * @dev Emitted when new token's satellite is created.
+     */
     event NewSatellite(uint256 indexed tokenId, address satelite);
 
+    /**
+     * @dev Emitted when the token web uri is updated.
+     */
     event WebURI(uint256 indexed tokenId, string webUri);
+
     /**
      * @dev Actually performs the transfer request corresponding to the given `_transactionId`
      * Called by the settlement agent operator
@@ -117,7 +131,9 @@ interface ISecurityTokenV1 is IERC1155 {
     /**
      * @dev get locked amout
      */
-    function getLockedAmount(string memory _transactionId) external view returns(TransferRequest memory);
+    function getLockedAmount(
+        string memory _transactionId
+    ) external view returns (TransferRequest memory);
 
     /**
      * @dev Returns the name of the token

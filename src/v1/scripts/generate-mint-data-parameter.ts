@@ -2,7 +2,11 @@ import { ethers } from 'hardhat';
 import fs from 'fs';
 import path from 'path';
 import { GetMintDataConfig } from './configuration/mint-data-config';
-import { SatelliteDetails, TokenMetadata, TokenOperators } from '../types/types';
+import {
+  SatelliteDetails,
+  TokenMetadata,
+  TokenOperators,
+} from '../types/types';
 import { MINT_DATA_TYPES } from '../test/utils/constants';
 
 async function main() {
@@ -46,11 +50,11 @@ function generateDataForMint(
 ) {
   var AbiCoder = new ethers.AbiCoder();
 
-  return AbiCoder.encode(
-    MINT_DATA_TYPES
-    ,
-    [tokenOperators, tokenMetadata, satelliteDetails],
-  );
+  return AbiCoder.encode(MINT_DATA_TYPES, [
+    tokenOperators,
+    tokenMetadata,
+    satelliteDetails,
+  ]);
 }
 
 main().catch((error) => {

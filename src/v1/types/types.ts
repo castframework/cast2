@@ -5,8 +5,8 @@ export type TokenOperators = {
 export type TokenMetadata = {
   uri: string;
   formerSmartContractAddress: string;
-  webUri: string
-}
+  webUri: string;
+};
 export type SatelliteDetails = {
   name: string;
   symbol: string;

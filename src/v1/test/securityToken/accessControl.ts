@@ -11,10 +11,18 @@ import {
   deployTestContractMissuseAccessControlInternal,
 } from '../utils/builders';
 import { getOperatorSigners } from '../utils/signers';
-import { FORMER_SMART_CONTRACT_ADDRESS, MINT_DATA_TYPES, ZERO_ADDRESS } from '../utils/constants';
+import {
+  FORMER_SMART_CONTRACT_ADDRESS,
+  MINT_DATA_TYPES,
+  ZERO_ADDRESS,
+} from '../utils/constants';
 import { Signer } from 'ethers';
 import { ethers } from 'hardhat';
-import { SatelliteDetails, TokenMetadata, TokenOperators } from '../../types/types';
+import {
+  SatelliteDetails,
+  TokenMetadata,
+  TokenOperators,
+} from '../../types/types';
 import { symbol } from 'zod';
 import { SatelliteV1 } from 'dist/types';
 
@@ -135,11 +143,11 @@ context('SecurityTokenV1', () => {
     let registrarAddress;
     let settlementAgentAddress;
     let newRegistrarAddress;
-  
+
     let satelliteImplementationAddress;
     let satelliteImplementation: SatelliteV1;
 
-    let satelitteDetails: SatelliteDetails
+    let satelitteDetails: SatelliteDetails;
     let tokenOperators: TokenOperators;
     let tokenMetadata: TokenMetadata;
 
@@ -153,7 +161,8 @@ context('SecurityTokenV1', () => {
       newRegistrarAddress = await signers.investor3.getAddress();
       satelliteImplementation = await loadFixture(deploySatelliteV1Fixture);
 
-      satelliteImplementationAddress = await satelliteImplementation.getAddress();
+      satelliteImplementationAddress =
+        await satelliteImplementation.getAddress();
       tokenOperators = {
         registrarAgent: registrarAddress,
         settlementAgent: settlementAgentAddress,
@@ -161,14 +170,14 @@ context('SecurityTokenV1', () => {
       tokenMetadata = {
         uri: '0x',
         formerSmartContractAddress: FORMER_SMART_CONTRACT_ADDRESS,
-        webUri:""
-      }
+        webUri: '',
+      };
       satelitteDetails = {
         implementationAddress: satelliteImplementationAddress,
-        name:"toto",
-        symbol:"tata",
-      }
-  
+        name: 'toto',
+        symbol: 'tata',
+      };
+
       mintFunction = () =>
         securityTokenProxy
           .connect(signers.registrar)
@@ -176,10 +185,11 @@ context('SecurityTokenV1', () => {
             receiverAddress,
             tokenId,
             amount,
-            AbiCoder.encode(
-             MINT_DATA_TYPES,
-              [tokenOperators, tokenMetadata, satelitteDetails],
-            ),
+            AbiCoder.encode(MINT_DATA_TYPES, [
+              tokenOperators,
+              tokenMetadata,
+              satelitteDetails,
+            ]),
           );
       await mintFunction();
     });
@@ -201,7 +211,6 @@ context('SecurityTokenV1', () => {
     });
 
     it("should emit SettlementAgentUpdated when token's settlement agent has been updated", async () => {
-
       const setSettlementAgent = securityTokenProxy
         .connect(signers.registrar)
         .setSettlementAgent(tokenId, receiverAddress);

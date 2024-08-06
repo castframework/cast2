@@ -20,6 +20,9 @@ contract SatelliteV1 is ISatelliteV1, Initializable, ERC165 {
 
     constructor() {}
 
+    /**
+    @dev initiates the token parameters.
+     */
     function initialize(
         address _erc1155Parent,
         uint256 _tokenId,
@@ -32,6 +35,9 @@ contract SatelliteV1 is ISatelliteV1, Initializable, ERC165 {
         symbol = _symbol;
     }
 
+    /**
+     *@dev emits transfer event when safeTransferFrom is made on the ERC1155 parent tokenId.
+     */
     function transferFrom(
         address from,
         address to,
@@ -41,10 +47,16 @@ contract SatelliteV1 is ISatelliteV1, Initializable, ERC165 {
         return true;
     }
 
+    /**
+     *@dev Returns the balance of `account` related to ERC1155 parent tokenId.
+     */
     function balanceOf(address account) external view returns (uint256) {
         return erc1155Parent.balanceOf(account, tokenId);
     }
 
+    /**
+     *@dev Returns the token's total supply.
+     */
     function totalSupply() external view returns (uint256) {
         return erc1155Parent.totalSupply(tokenId);
     }
@@ -53,37 +65,42 @@ contract SatelliteV1 is ISatelliteV1, Initializable, ERC165 {
     function tokenURI() external view returns (string memory) {
         return erc1155Parent.uri(tokenId);
     }
-    function webUri() external view returns (string memory){
+
+    /**
+     *@dev  Returns the token's web uri.
+     */
+    function webUri() external view returns (string memory) {
         return erc1155Parent.webUri(tokenId);
     }
-    function formerSmartContractAddress() external view returns (address){
-         return erc1155Parent.formerSmartContractAddress(tokenId);
+
+    /**
+     *@dev  Returns the token's former smart contract address.
+     */
+    function formerSmartContractAddress() external view returns (address) {
+        return erc1155Parent.formerSmartContractAddress(tokenId);
     }
-    function allowance(
-        address,
-        address
-    ) external pure  returns (uint256){
+
+    function allowance(address, address) external pure returns (uint256) {
         revert Disabled();
     }
+
     // keep then so it will be picked up as an ERC20 by explorer
     function transfer(address, uint256) external pure returns (bool) {
-       revert Disabled();
+        revert Disabled();
     }
+
     function approve(address, uint256) external pure returns (bool) {
-       revert Disabled();
+        revert Disabled();
     }
+
     /**
      * @dev ERC165. Indicates that the Satellite implements the ISatellite interface.
      */
-    function supportsInterface(bytes4 interfaceId)
-        override
-        public
-        view
-        returns (bool)
-    {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view override returns (bool) {
         return
             interfaceId == type(ISatelliteV1).interfaceId ||
             super.supportsInterface(interfaceId);
     }
-
 }

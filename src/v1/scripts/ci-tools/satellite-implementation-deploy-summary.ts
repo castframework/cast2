@@ -1,7 +1,9 @@
-
 import path from 'path';
 import process from 'process';
-import { GetNewSatelliteImplementationConfig, NewSatelliteImplementationConfig } from '../configuration/new-satellite-implementation-config';
+import {
+  GetNewSatelliteImplementationConfig,
+  NewSatelliteImplementationConfig,
+} from '../configuration/new-satellite-implementation-config';
 
 const config = GetNewSatelliteImplementationConfig();
 

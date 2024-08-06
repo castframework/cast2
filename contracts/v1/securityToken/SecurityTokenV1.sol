@@ -207,11 +207,14 @@ contract SecurityTokenV1 is
     ) external whenNotPaused onlyRegistrar {
         ERC1155URIStorageUpgradeable._setURI(tokenId, tokenURI);
     }
-    
+
     /**
      * @dev set the token's webUri.
      */
-    function setWebUri(uint256 _tokenId, string calldata _webUri) external whenNotPaused onlyRegistrar{
+    function setWebUri(
+        uint256 _tokenId,
+        string calldata _webUri
+    ) external whenNotPaused onlyRegistrar {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         $.webUris[_tokenId] = _webUri;
         emit WebURI(_tokenId, _webUri);
@@ -244,7 +247,7 @@ contract SecurityTokenV1 is
 
     /**
      * @dev Mints a `_amount` amount of `_id` tokens on `_to` address
-     * NB: if `_data` data is not empty, set up a registrar agent, settlement agent and an uri for the `_id` token.
+     * NB: if `_data` data is not empty, set up a registrar agent,former smart contracts address, web uri, satellite, settlement agent and an uri for the `_id` token.
      * NB: only the registrar operator is allowed to mint new tokens
      */
     function mint(
@@ -255,14 +258,16 @@ contract SecurityTokenV1 is
     ) external whenNotPaused onlyRegistrar returns (bool) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         if (_data.length != 0) {
-            
             require(!$.minted[_id], TokenAlreadyMinted(_id));
-            
+
             (
                 TokenOperators memory tokenOperators,
                 TokenMetadata memory tokenMetadata,
                 SatelliteDetails memory satelitteDetails
-            ) = abi.decode(_data, (TokenOperators, TokenMetadata, SatelliteDetails));
+            ) = abi.decode(
+                    _data,
+                    (TokenOperators, TokenMetadata, SatelliteDetails)
+                );
 
             require(
                 ERC165Checker.supportsInterface(
@@ -271,7 +276,8 @@ contract SecurityTokenV1 is
                 ),
                 InvalidSatelliteAddress()
             );
-            $.formerSmartcontractAddresses[_id] = tokenMetadata.formerSmartcontractAddress;
+            $.formerSmartcontractAddresses[_id] = tokenMetadata
+                .formerSmartcontractAddress;
             $.webUris[_id] = tokenMetadata.webUri;
             _setRegistrarAgent(_id, tokenOperators.registrarAgent);
             _setSettlementAgent(_id, tokenOperators.settlementAgent);
@@ -362,7 +368,9 @@ contract SecurityTokenV1 is
     /**
      * @dev Returns the name of this token
      */
-    function formerSmartContractAddress(uint256 _tokenId) external view returns (address) {
+    function formerSmartContractAddress(
+        uint256 _tokenId
+    ) external view returns (address) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
         return $.formerSmartcontractAddresses[_tokenId];
     }
@@ -399,10 +407,17 @@ contract SecurityTokenV1 is
         return $.webUris[_tokenId];
     }
 
-    function getLockedAmount(string memory _transactionId) external view returns(TransferRequest memory){
+    function getLockedAmount(
+        string memory _transactionId
+    ) external view returns (TransferRequest memory) {
         SecurityTokenStorage storage $ = _getSecurityTokenStorage();
-        TransferRequest memory transferRequest = $.transferRequests[_transactionId];
-        require(transferRequest.status == TransferStatus.Created, InvalidTransferRequestStatus());
+        TransferRequest memory transferRequest = $.transferRequests[
+            _transactionId
+        ];
+        require(
+            transferRequest.status == TransferStatus.Created,
+            InvalidTransferRequestStatus()
+        );
         return transferRequest;
     }
 

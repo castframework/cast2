@@ -35,7 +35,8 @@ export async function deploySecurityTokenFixture(): Promise<SecurityTokenV1> {
 export async function deploySatelliteV1Fixture(): Promise<SatelliteV1> {
   const SatelliteV1 = await ethers.getContractFactory('SatelliteV1');
 
-  const satelliteV1ImplementationInstance = (await SatelliteV1.deploy()) as SatelliteV1;
+  const satelliteV1ImplementationInstance =
+    (await SatelliteV1.deploy()) as SatelliteV1;
   return satelliteV1ImplementationInstance;
 }
 

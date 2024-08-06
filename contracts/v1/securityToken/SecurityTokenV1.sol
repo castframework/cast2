@@ -407,6 +407,9 @@ contract SecurityTokenV1 is
         return $.webUris[_tokenId];
     }
 
+    /**
+     * @dev Returns the locked amount for the given `_transactionId` transactionId
+     */
     function getLockedAmount(
         string memory _transactionId
     ) external view returns (TransferRequest memory) {
@@ -640,7 +643,7 @@ contract SecurityTokenV1 is
     /**
      * @dev Private method releasing a lock transfer.
      * disengages the engaged amount
-     * proceeds the transfer for the given `_transactionId` transactionId
+     * processes the transfer for the given `_transactionId` transactionId
      * and emits a corresponding `LockUpdated` event
      */
     function _releaseTransaction(
@@ -766,7 +769,7 @@ contract SecurityTokenV1 is
     }
 
     /**
-     * @dev proceeds a transfer in satellite token
+     * @dev Processes a transfer in satellite token
      */
     function _handleSatelliteTransfer(
         uint256 _tokenId,

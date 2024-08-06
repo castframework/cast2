@@ -129,7 +129,7 @@ interface ISecurityTokenV1 is IERC1155 {
     function setWebUri(uint256 _tokenId, string calldata _webUri) external;
 
     /**
-     * @dev get locked amout
+     * @dev Returns the locked amount for the given `_transactionId` transactionId
      */
     function getLockedAmount(
         string memory _transactionId

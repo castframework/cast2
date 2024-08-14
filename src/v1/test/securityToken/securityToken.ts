@@ -968,6 +968,36 @@ context('SecurityTokenV1', () => {
             TransferStatus.Rejected,
           );
       });
+      it('cancel a lock transfer shoud emit TransferSingle Event', async () => {
+        const transactionId = randomUUID();
+        lockTransferData = {
+          kind: TransferKind.LOCK,
+          transactionId: transactionId,
+        };
+        const data = AbiCoder.encode(
+          ['tuple(string kind, string transactionId) lockTransferData'],
+          [lockTransferData],
+        );
+        expect(
+          securityTokenProxy
+            .connect(signers.registrarAgent)
+            .safeTransferFrom(
+              receiverAddress,
+              settlementAgentAddress,
+              tokenId,
+              transferAmount,
+              data,
+            ),
+        )
+          .to.emit(securityTokenProxy, 'TransferSingle')
+          .withArgs(
+            registrarAgentAddress,
+            receiverAddress,
+            settlementAgentAddress,
+            tokenId,
+            0,
+          );
+      });
     });
     context('Direct transfer', () => {
       let transferData: TransferData;

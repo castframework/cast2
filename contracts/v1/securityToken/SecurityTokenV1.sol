@@ -243,6 +243,7 @@ contract SecurityTokenV1 is
         onlyWhenBalanceAvailable(_account, _id, _amount)
     {
         super._burn(_account, _id, _amount);
+        _handleSatelliteTransfer(_id, _account, address(0), _amount);
     }
 
     /**
@@ -629,6 +630,8 @@ contract SecurityTokenV1 is
         $.engagedAmount[transferRequest.id][
             transferRequest.from
         ] -= transferRequest.value;
+        emit TransferSingle(_msgSender(), transferRequest.from, transferRequest.to, transferRequest.id, 0);
+        _handleSatelliteTransfer(transferRequest.id, transferRequest.from, transferRequest.to, 0);
         emit LockUpdated(
             _transactionId,
             _msgSender(),
@@ -691,8 +694,8 @@ contract SecurityTokenV1 is
 
     /**
      * @dev Deploy a new satellite contract for a given tokenId
-     * The goal of a satellite contract is that a given token appear
-     * as his own on explorers (e.g. own token tracker on etherscan)
+     * The goal of a satellite contract is that a given token appears
+     * on its own on explorers (e.g. own token tracker on etherscan)
      */
     function _launchSatellite(
         uint256 _tokenId,
@@ -750,6 +753,7 @@ contract SecurityTokenV1 is
                 _value,
                 TransferStatus.Created
             );
+            _handleSatelliteTransfer(_id, _from, _to, 0);
             emit TransferSingle(_msgSender(), _from, _to, _id, 0);
             emit LockReady(
                 lockTransferData.transactionId,
@@ -759,7 +763,7 @@ contract SecurityTokenV1 is
                 _id,
                 _value,
                 _data
-            );
+            );           
         } else if (_isDirectTransfer(transferData.kind)) {
             super._safeTransferFrom(_from, _to, _id, _value, _data);
             _handleSatelliteTransfer(_id, _from, _to, _value);

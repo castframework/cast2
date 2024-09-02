@@ -3,28 +3,59 @@
 </div>
 
 # Description
- 
-The SmartCoin contract is basically an ERC20 with a few specifics
- 
-The Registrar is responsible for managing elegible entities.
- 
-The Registrar is also responsible for freeze addresses, unfreeze addresses, mint, burn and wipe frozen addresses.
 
-## Transfer to the Special Entities 
+The `SecurityToken` contract is an ERC1155 with a few specifics.
 
-A modified version of ERC-20 transfers is used, transfers to the specials entities (i.e. registrar and operations) are restricted.
-Only direct transfer can be made, they cannot be the destination of an approve or a transferFrom.
-When the transfer function is called with thoses entities as destination a transfer request is emited.
-Tokens will not be transfer until the registrar validate that transfer request.
-Until the registrar validate or reject the request, tokens are "engaged".
-While engaged, tokens cannot be moved from the holder balance.
+### Set of operators with specific rights :
+
+#### For the Whole Contract 
+- The registrar operator :
+    - mints tokens
+    - burns tokens
+    - force reviews (and either releases or cancels) transfers of tokens
+    - names the operators for next implementation contract upgrade (ERC1155AccessControlUpgradeableV1.nameNewOperators)
+    - authorises upgrade to next implementation contract (ERC1155AccessControlUpgradeableV1.authorizeImplementation)
+- The technical operator :
+    - only the technical operator can launch a (previously authorised) upgrade of the implementation contract (upgradeTo/upgradeToAndCall)
+
+#### By Token Id
+- The registrar agent operator :
+    - initiate a safeTransferFrom
+    - cancel a locked safeTransferFrom using the cancelTransaction method
+- The settlement agent operator :
+    - releases a locked safeTransferFrom using the releaseTransaction method
+
+
+### Types of transfer:
+- Direct safeTransferFrom:
+    - direct transfer of tokens to the receiver
+- Lock safeTransferFrom
+    - locks the tokens in the holder address by the registrar agent
+    - transfer could be canceled by the registrar agent or registrar (owner of the contract).
+    - transfer could be released by the settlement agent or registrar (owner of the contract).
+
+### Types of mints :
+- Mint with data that contains (Settlement agent, Registrar agent and token URI)
+    - set up a registrar agent and settlement agent for the token.
+    - set up an URI for the token
+    - mints the tokens to receiver address
+- Mint with empty data
+    - mints tokens to the receiver address (only if the token was previously minted)
+
+### Satellite Contracts
+
+The goal of a satellite contract is to improve individual token tracking in block explorers, it achieve it by implementing an ERC20 interface.
+
+When a when tokenId is minted a Sattelite Contract is deployed.
+
+When the ERC1155 move tokens it call the corresponding satellite so to emit Transfer event. 
+
+Read calls are forwarded to the ERC1155 contract, with the token id filled by the sattelite.
 
 ## Contract and Operator Upgrades
 
 The implementation upgrade and operator upgrade are tied.
-For the operator to be well regulated, token transaction to/from them are restricted. 
-This mean that for each transaction (transfer/approve/transferFrom) checks are to be performed.
-The goal of this is to lower gas cost of those checks, by storing the operator in the bytecode, while keeping a secure way to update the Operators.
+The goal of this is to lower gas cost of acces control check, by storing the operator in the bytecode, while keeping a secure way to update the Operators.
 
 The main step to perform an upgrade are :
 
@@ -36,6 +67,7 @@ The main step to perform an upgrade are :
 - The upgrade to function check each operator is Ok, then upgrade is performed
 
 ### Sequence Diagram
+
 ```mermaid
 sequenceDiagram
     autonumber

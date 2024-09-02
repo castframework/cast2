@@ -46,7 +46,7 @@ The `SecurityToken` contract is an ERC1155 with a few specifics.
 
 The goal of a satellite contract is to improve individual token tracking in block explorers, it achieve it by implementing an ERC20 interface.
 
-When a when tokenId is minted a Sattelite Contract is deployed.
+When a tokenId is minted a Sattelite Contract is deployed.
 
 When the ERC1155 move tokens it call the corresponding satellite so to emit Transfer event. 
 

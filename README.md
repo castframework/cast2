@@ -48,7 +48,7 @@ The goal of a satellite contract is to improve individual token tracking in bloc
 
 When a tokenId is minted a Sattelite Contract is deployed.
 
-When the ERC1155 move tokens it call the corresponding satellite so to emit Transfer event. 
+When the ERC1155 moves tokens it calls the corresponding satellite so to emit Transfer event. 
 
 Read calls are forwarded to the ERC1155 contract, with the token id filled by the sattelite.
 

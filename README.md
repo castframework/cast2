@@ -57,7 +57,7 @@ Read calls are forwarded to the ERC1155 contract, with the token id filled by th
 The implementation upgrade and operator upgrade are tied.
 The goal of this is to lower gas cost of acces control check, by storing the operator in the bytecode, while keeping a secure way to update the Operators.
 
-The main step to perform an upgrade are :
+The main steps to perform an upgrade are :
 
 - Registrar name the next Operators
 - Each operator accept the role

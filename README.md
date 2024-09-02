@@ -64,7 +64,7 @@ The main step to perform an upgrade are :
 - The actual Technical deploy a new contract
 - The actual Registrar authorize the update to the new contract
 - The actual Technical launch the UpgradeTo fonction
-- The upgrade to function check each operator is Ok, then upgrade is performed
+- The upgradeTo function checks each operator is Ok, then upgrade is performed
 
 ### Sequence Diagram
 

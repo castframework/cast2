@@ -269,6 +269,17 @@ context('SecurityTokenV1', () => {
         newBaseUri.concat(tokenURI),
       );
     });
+    it('should emit BaseURI event', async () => {
+      const newBaseUri = 'https://test.io/';
+
+      const setBaseUriTx = await securityTokenProxy
+        .connect(signers.registrar)
+        .setBaseURI(newBaseUri);
+
+      await expect(setBaseUriTx)
+        .to.emit(securityTokenProxy, 'BaseURI')
+        .withArgs(newBaseUri);
+    });
     it('only registrar should be able to set base uri', async () => {
       const setBaseUrl = securityTokenProxy
         .connect(signers.settlementAgent)

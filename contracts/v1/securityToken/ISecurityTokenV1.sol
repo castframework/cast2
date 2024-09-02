@@ -83,6 +83,11 @@ interface ISecurityTokenV1 is IERC1155 {
     event WebURI(uint256 indexed tokenId, string webUri);
 
     /**
+     * @dev Emitted when the contract base uri is updated.
+     */
+    event BaseURI(string baseUri);
+
+    /**
      * @dev Actually performs the transfer request corresponding to the given `_transactionId`
      * Called by the settlement agent operator
      */

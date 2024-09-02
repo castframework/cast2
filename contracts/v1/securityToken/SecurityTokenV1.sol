@@ -226,6 +226,7 @@ contract SecurityTokenV1 is
         string calldata _baseURI
     ) external whenNotPaused onlyRegistrar {
         ERC1155URIStorageUpgradeable._setBaseURI(_baseURI);
+        emit BaseURI(_baseURI);
     }
 
     /**

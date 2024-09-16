@@ -135,10 +135,7 @@ const config : HardhatUserConfig  = {
   },
   networks: buildNetworkFromEnv(),
   etherscan: {
-    apiKey: {
-      mainnet: etherScanApiKey,
-      sepolia: etherScanApiKey
-    }
+    apiKey: etherScanApiKey
   },
   docgen: {
     pages: 'items',

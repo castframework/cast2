@@ -1,0 +1,421 @@
+{
+   "name": "ISIN Code",
+   "description": "Textual description of the Financial Product",
+   "image": "https://yourdns.nowhere.local/image/image.png",
+   "properties": [
+      {
+         "name": "Issuer Account",
+         "value": "0xdc03823bbCCC2fe2a6cEa8976Ab803709C1be0A4"
+      },
+      {
+         "name": "Issuer LEI",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.PartyRole[?(@.PartyRoleType=='ISSUER')].PartyID._PID",
+         "value": "LEI-969500KN90DZLHUN3566"
+      },
+      {
+         "name": "Registrar Account",
+         "value": "0xc7f46df4067255ec07e4020e5590075fc7b1115f"
+      },
+      {
+         "name": "Registrar LEI",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.PartyRole[?(@.PartyRoleType=='REGISTRAR')].PartyID._PID",
+         "value": "LEI-969500FX8K40ZDW4F377"
+      },
+      {
+         "name": "Guarantor Account",
+         "value": "0xdc03823bbCCC2fe2a6cEa8976Ab803709C1be0A4"
+      },
+      {
+         "name": "Guarantor LEI",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.PartyRole[?(@.PartyRoleType=='GARANTOR')].PartyID._PID",
+         "value": "LEI-O2RNE8IBXP4R0TD8PU41"
+      },
+      {
+         "name": "Settlement Agent Account",
+         "value": "0xc7f46df4067255ec07e4020e5590075fc7b1115f"
+      },
+      {
+         "name": "Settlement Agent LEI",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.PartyRole[?(@.PartyRoleType=='SETTLEMENT_AGENT')].PartyID._PID",
+         "value": "LEI-969500FX8K40ZDW4F377"
+      },
+      {
+         "name": "Settlement Currency",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Issuance.SettlementCurrency",
+         "value": "EUR"
+      },
+      {
+         "name": "decimals",
+         "value": "0"
+      },
+      {
+         "name": "Denomination",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Issuance.SpecifiedDenomination",
+         "value": "100000"
+      },
+      {
+         "name": "Security Onchain Carbon Footprint Estimation Date",
+         "value": "1701302400",
+         "display_value": "2024-10-08"
+      },
+      {
+         "name": "Security Onchain Carbon Footprint Estimate (KgCO2equivalentByYear)",
+         "value": "0.64"
+      },
+      {
+         "name": "Security Onchain Carbon Footprint Report",
+         "value": "https://www.sgforge.com/"
+      },
+      {
+         "name": "Rate of Interest",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.InterestPayment.InterestRate",
+         "value": "0.12345678901234567890123456789012345678901234567890 %"
+      },
+      {
+         "name": "Final Redemption Amount",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Issuance.FinalRedemptionAmountPercentage",
+         "value": "100 %"
+      },
+      {
+         "name": "Form of the Note",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.FormOfNote",
+         "value": "DEMATERIALISED"
+      },
+      {
+         "name": "Governing Law",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Issuance.GoverningLaw",
+         "value": "FRENCH_LAW"
+      },
+      {
+         "name": "Isin Code",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.SecurityIdentifierList.SecurityIdentifier.ISIN",
+         "value": "FR0013510518"
+      },
+      {
+         "name": "listing",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Issuance.Listing.Market",
+         "value": "LUXEMBOURG_STOCK_EXCHANGE"
+      },
+      {
+         "display_type": "date",
+         "name": "maturityDate",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.MaturityDate",
+         "value": "2025-05-14"
+      },
+      {
+         "name": "Product Name",
+         "value": "The Product Name"
+      },
+      {
+         "name": "Status of the Notes",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.StatusOfNote",
+         "value": "SENIOR_SECURED"
+      },
+      {
+         "name": "program",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Issuance.IssuanceType",
+         "value": "PROGRAMME"
+      },
+      {
+         "name": "Series Number",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.Series.SeriesNumber",
+         "value": "101"
+      },
+      {
+         "name": "Series Amount",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.Series.SeriesAmount",
+         "display_type": "number",
+         "value": "40000000"
+      }
+   ],
+   "attributes": [
+      {
+         "trait_type": "Issuer Account",
+         "value": "0xdc03823bbCCC2fe2a6cEa8976Ab803709C1be0A4"
+      },
+      {
+         "trait_type": "Issuer LEI",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.PartyRole[?(@.PartyRoleType=='ISSUER')].PartyID._PID",
+         "value": "LEI-969500KN90DZLHUN3566"
+      },
+      {
+         "trait_type": "Registar Account",
+         "value": "0x65980908e77B276C3e6Cd73F609da62d1FC8e062"
+      },
+      {
+         "trait_type": "Registar LEI",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.PartyRole[?(@.PartyRoleType=='REGISTRAR')].PartyID._PID",
+         "value": "LEI-969500FX8K40ZDW4F377"
+      },
+      {
+         "trait_type": "Registar Agent Account",
+         "value": "0x65980908e77B276C3e6Cd73F609da62d1FC8e062"
+      },
+      {
+         "trait_type": "Registar Agent LEI",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.PartyRole[?(@.PartyRoleType=='REGISTRAR_AGENT')].PartyID._PID",
+         "value": "LEI-969500FX8K40ZDW4F377"
+      },
+      {
+         "trait_type": "Guarantor Account",
+         "value": "0xdc03823bbCCC2fe2a6cEa8976Ab803709C1be0A4"
+      },
+      {
+         "trait_type": "Guarantor LEI",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.PartyRole[?(@.PartyRoleType=='GARANTOR')].PartyID._PID",
+         "value": "LEI-O2RNE8IBXP4R0TD8PU41"
+      },
+      {
+         "trait_type": "Settlement Agent Account",
+         "value": "0xc7f46df4067255ec07e4020e5590075fc7b1115f"
+      },
+      {
+         "trait_type": "Settlement Agent LEI",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.PartyRole[?(@.PartyRoleType=='SETTLEMENT_AGENT')].PartyID._PID",
+         "value": "LEI-969500FX8K40ZDW4F377"
+      },
+      {
+         "trait_type": "Settlement Currency",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Issuance.SpecifiedCurrency",
+         "value": "EUR"
+      },
+      {
+         "trait_type": "decimals",
+         "display_type": "number",
+         "value": "0"
+      },
+      {
+         "trait_type": "Denomination",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Issuance.SpecifiedDenomination",
+         "display_type": "number",
+         "value": "100000"
+      },
+      {
+         "trait_type": "Security Onchain Carbon Footprint Estimation Date",
+         "display_type": "date",
+         "value": "1701302400"
+      },
+      {
+         "trait_type": "Security Onchain Carbon Footprint Estimate (KgCO2equivalentByYear)",
+         "display_type": "number",
+         "value": "0.64"
+      },
+      {
+         "trait_type": "Security Onchain Carbon Footprint Report",
+         "value": "https://www.sgforge.com/"
+      },
+      {
+         "trait_type": "Rate of Interest",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.InterestPayment.InterestRate",
+         "value": "0.12345678901234567890123456789012345678901234567890 %"
+      },
+      {
+         "trait_type": "Final Redemption Amount",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Issuance.FinalRedemptionAmountPercentage",
+         "value": "100 %"
+      },
+      {
+         "trait_type": "Form of the Note",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.FormOfNote",
+         "value": "DEMATERIALISED"
+      },
+      {
+         "trait_type": "Governing Law",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Issuance.GoverningLaw",
+         "value": "FRENCH_LAW"
+      },
+      {
+         "trait_type": "ISIN Code",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.SecurityIdentifierList.SecurityIdentifier.ISIN",
+         "value": "FR0013510518"
+      },
+      {
+         "trait_type": "listing",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Issuance.Listing.Market",
+         "value": "LUXEMBOURG_STOCK_EXCHANGE"
+      },
+      {
+         "display_type": "date",
+         "trait_type": "maturityDate",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.MaturityDate",
+         "value": "1795996800"
+      },
+      {
+         "trait_type": "Product Name",
+         "value": "The Product Name"
+      },
+      {
+         "trait_type": "Status of the Notes",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.StatusOfNote",
+         "value": "SENIOR_SECURED"
+      },
+      {
+         "trait_type": "program",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Issuance.IssuanceType",
+         "value": "PROGRAMME"
+      },
+      {
+         "trait_type": "Series Number",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.Series.SeriesNumber",
+         "value": "101"
+      },
+      {
+         "trait_type": "Series Amount",
+         "bdt_attribute": "$.ICMABondDataTaxonomy.Product.Series.SeriesAmount",
+         "display_type": "number",
+         "value": "40000000"
+      }
+   ],
+   "ICMABondDataTaxonomy": {
+      "PartyRole": [
+         {
+            "PartyRoleType": "ISSUER",
+            "PartyID": {
+               "_PID": "LEI-969500KN90DZLHUN3566"
+            }
+         },
+         {
+            "PartyRoleType": "REGISTRAR",
+            "PartyID": {
+               "_PID": "LEI-969500FX8K40ZDW4F377"
+            }
+         },
+         {
+            "PartyRoleType": "REGISTRAR_AGENT",
+            "PartyID": {
+               "_PID": "LEI-969500FX8K40ZDW4F377"
+            }
+         },
+         {
+            "PartyRoleType": "GARANTOR",
+            "PartyID": {
+               "_PID": "LEI-O2RNE8IBXP4R0TD8PU41"
+            }
+         },
+         {
+            "PartyRoleType": "SETTLEMENT_AGENT",
+            "PartyID": {
+               "_PID": "LEI-969500FX8K40ZDW4F377"
+            }
+         }
+      ],
+      "Party": [
+         {
+            "PartyName": "SOCIETE GENERALE SFH",
+            "LEIIdentifier": "969500KN90DZLHUN3566",
+            "_PID": "LEI-969500KN90DZLHUN3566"
+         },
+         {
+            "PartyName": "SOCIETE GENERALE - FORGE",
+            "LEIIdentifier": "969500FX8K40ZDW4F377",
+            "_PID": "LEI-969500FX8K40ZDW4F377"
+         }
+      ],
+      "Issuance": {
+         "IssuanceType": "PROGRAMME",
+         "SpecifiedDenomination": "100000",
+         "FinalRedemptionAmountPercentage": "100",
+         "SpecifiedCurrency": "EUR",
+         "PricingDate": "2020-05-14",
+         "IssueDate": "2020-05-14",
+         "SettlementDate": "2020-05-14",
+         "IssuePrice": "100.00",
+         "Listing": {
+            "Market": "LUXEMBOURG_STOCK_EXCHANGE",
+            "MarketType": "RMKT"
+         },
+         "ClearingSettlementSystem": [
+            {
+               "ClearingSettlementSystem": [
+                  "CLEARSTREAM_BANKING_S.A.",
+                  "EUROCLEAR_BANK_SA/NV"
+               ]
+            }
+         ],
+         "DltPlatform": {
+            "Type": "Ethereum",
+            "Accessibility": "PUBLIC",
+            "Role": "Registration",
+            "Operator": {
+               "Operator": "LEI-969500FX8K40ZDW4F377"
+            },
+            "Name": "DEEP",
+            "Identifier": {
+               "MIC": "SGFG",
+               "_PID": "LEI-969500FX8K40ZDW4F378"
+            },
+            "TokenType": "SECURITY",
+            "TokenTechnicalReference": "ERC-20",
+            "SmartContract": "0x9915ced2820082a25a8992752aa43bcb0e1d1097"
+         },
+         "MethodOfDistribution": "NON-SYNDICATED",
+         "GoverningLaw": "FRENCH_LAW",
+         "Documentation": {
+            "DocumentDetail": {
+               "DocumentName": "Issue of €40,000,000 0.00 per cent. obligations de financement de l’habitat \ndue 14 May 2025 extendible up to 14 May 2026\nand registered in a distributed ledger technology\n(dispositif d’enregistrement électronique partagé)",
+               "DocumentDate": "2020-05-12"
+            }
+         },
+         "SellingRestrictions": {
+            "SellingRestriction": "REGS_CAT2"
+         },
+         "AdditionalSellingRestrictions": "The Notes may not be legally or beneficially owned at any time by any U.S. Person (as defined in Regulation S) and accordingly are being offered and sold outside the United States to persons that are not U.S. Persons in reliance \non Regulation S.",
+         "ManufacturerTargetMarket": "EU_MIFIDII_PROF_AND_ECPS",
+         "NegativePledge": "NOT_APPLICABLE",
+         "GrossUp": "NOT_APPLICABLE",
+         "CrossDefault": "NOT_APPLICABLE",
+         "SubstitutionOrVariation": "NOT_APPLICABLE",
+         "CallPutOption": "CHANGE_OF_CONTROL_PUT_EVENT"
+      },
+      "Product": {
+         "SecurityIdentifierList": {
+            "SecurityIdentifier": {
+               "ISIN": "FR0013510518",
+               "IdentifierType": "ISIN"
+            }
+         },
+         "Series": {
+            "SeriesNumber": "101",
+            "SeriesAmount": "40000000"
+         },
+         "Tranche": {
+            "TrancheNumber": "1",
+            "TrancheAmount": "40000000"
+         },
+         "FormOfNote": "DEMATERIALISED",
+         "StatusOfNote": "SENIOR_SECURED",
+         "AggregateNominalAmount": "40000000",
+         "ExpectedProductRating": {
+            "Rating": [
+               {
+                  "RatingAgency": "FITCH",
+                  "RatingValue": "AAA"
+               },
+               {
+                  "RatingAgency": "MOODYS",
+                  "RatingValue": "Aaa"
+               }
+            ]
+         },
+         "MaturityDate": "2025-05-14",
+         "InterestPayment": {
+            "InterestType": "FIXED",
+            "InterestRate": "0.12345678901234567890123456789012345678901234567890",
+            "InterestCommencementDate": "2020-05-14",
+            "InterestPayments": {
+               "InterestPaymentFrequency": "ANNUALLY",
+               "PayableDate": {
+                  "Day": "14",
+                  "Month": "5"
+               },
+               "FirstPayment": {
+                  "PaymentDate": "2021-05-14"
+               }
+            }
+         },
+         "DayCountFraction": "ICMA_ACT/ACT",
+         "BusinessDayConvention": "MODIFIED_FOLLOWING_ADJUSTED",
+         "BusinessDayCenter": "TARGET2"
+      }
+   }
+}
